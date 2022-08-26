@@ -1,0 +1,7 @@
+[submodule "thirdparty/nanovg"]
+	path = thirdparty/nanovg
+	url = https://github.com/memononen/nanovg.git
+[submodule "thirdparty/duktape"]
+	path = thirdparty/duktape
+	url = https://github.com/svaarala/duktape.git
+	branch = tags/v2.7.0
