@@ -1,0 +1,10 @@
+build/
+build-wasm/
+/*.dll
+/*.data
+/*.exe
+/*.wasm
+/*.dylib
+/.vscode
+.DS_Store
+/superstation
