@@ -15,7 +15,7 @@ static void my_fatal(void *udata, const char *msg) {
     abort();
 }
 
-void ink_js_runFile(duk_context* vm, const char* path){
+void kvs_runFile(duk_context* vm, const char* path){
     size_t len;
     const char* source = SDL_LoadFile(path, &len);
     assert(source != NULL);
@@ -36,7 +36,7 @@ static duk_ret_t js_print(duk_context *ctx) {
     return 0;
 }
 
-duk_context* ink_js_init() {
+duk_context* kvs_init() {
     duk_context* vm = duk_create_heap(NULL, NULL, NULL, NULL, my_fatal);
     assert(vm != NULL);
     

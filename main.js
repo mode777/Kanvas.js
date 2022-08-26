@@ -15,12 +15,46 @@ while(story.canContinue){
     }
 }
 
-var x = 100
-var y = 100
+vg.createFont("sans", "assets/fonts/Roboto/Roboto-Regular.ttf");
+vg.createFont("sans-bold", "assets/fonts/Roboto/Roboto-Bold.ttf");
 
-requestAnimationFrame(function() {
-    vg.beginPath();
-    vg.rect(x++,y++, 120,30);
-    vg.fillColor(255,192,0,255);
-    vg.fill();
+
+
+function drawTriangle(x1,y1,x2,y2,x3,y3,color){
+    vg.beginPath()
+    vg.moveTo(x1,y1)
+    vg.lineTo(x2,y2)
+    vg.lineTo(x3,y3)
+    vg.closePath()
+    vg.fillColor(color)
+    vg.fill()
+}
+
+function sinval(t,s,a){
+    return Math.sin(t*s) * a
+}
+
+requestAnimationFrame(function(time) {
+    vg.beginPath()
+    vg.rect(0,0, 640,480)
+    vg.fillColor("#FFF1E8")
+    vg.fill()
+
+    vg.translate(80, 175 + sinval(time,2,20))
+    
+    drawTriangle(0,0,100,0,50,50,"#FF004D")
+    drawTriangle(0,0,50,50,0,100,"#00E436")
+    drawTriangle(50,50,100,100,0,100,"#29ADFF")
+
+    vg.fontFace("sans-bold")
+    vg.fontSize(100)
+    //vg.fontAlign(vg.TOP | vg.CENTER)
+    
+    vg.fillColor("#00000066")
+    vg.fontBlur(15)
+    vg.text(120,85,"Kanvas")
+    vg.fillColor("#000")
+    vg.fontBlur(0)
+    vg.text(120,85,"Kanvas")
+
 })

@@ -3,7 +3,7 @@
 
 #include <duktape.h>
 
-duk_context* ink_js_init();
-void ink_js_runFile(duk_context* vm, const char* path);
+duk_context* kvs_init();
+void kvs_runFile(duk_context* vm, const char* path);
 
 #endif

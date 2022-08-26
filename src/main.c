@@ -16,6 +16,24 @@ static SDL_Event event;
 static SDL_Window* window;
 static bool quit;
 
+static void init(){
+  vm = kvs_init();
+  kvs_nanovg_init(vm);
+  kvs_runFile(vm, "core.js");
+  kvs_runFile(vm, "ink.js");
+  kvs_runFile(vm, "main.js");
+}
+
+static void dispose(){
+  kvs_nanovg_dispose();
+  duk_destroy_heap(vm);
+}
+
+static void reset(){
+  dispose();
+  init();
+}
+
 static void update(){
     while(SDL_PollEvent(&event)){
       switch (event.type)
@@ -23,6 +41,9 @@ static void update(){
         case SDL_QUIT:
           quit = true;
           break;
+        case SDL_KEYUP:
+          if(event.key.keysym.scancode == SDL_SCANCODE_F5)
+            reset(); 
         default:
           break;
       }
@@ -40,7 +61,7 @@ static void update(){
     glEnable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
 
-    ink_js_nanovg_update(vm);
+    kvs_nanovg_update(vm);
     
     SDL_GL_SwapWindow(window);
 }
@@ -67,11 +88,7 @@ int main(int argc, char *argv[]) {
 
   assert(context != NULL);
 
-  vm = ink_js_init();
-  ink_js_nanovg_init(vm);
-  ink_js_runFile(vm, "core.js");
-  ink_js_runFile(vm, "ink.js");
-  ink_js_runFile(vm, "main.js");
+  init();  
 
   while(!quit){
     Uint32 t = SDL_GetTicks();
@@ -79,4 +96,6 @@ int main(int argc, char *argv[]) {
     t = 15-(t-SDL_GetTicks());
     if(t > 0) SDL_Delay(t);
   }
+
+  dispose();
 }

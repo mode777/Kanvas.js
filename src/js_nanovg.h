@@ -3,7 +3,9 @@
 
 #include <duktape.h>
 
-void ink_js_nanovg_init(duk_context* vm);
-void ink_js_nanovg_update(duk_context* vm);
+void kvs_nanovg_init(duk_context* vm);
+void kvs_nanovg_dispose();
+void kvs_nanovg_update(duk_context* vm);
+
 
 #endif
