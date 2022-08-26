@@ -47,18 +47,6 @@ endif()
 find_package(EGL REQUIRED)
 find_package(OpenGLES2 REQUIRED)
 
-# Add STB libs
-add_library(stb_image INTERFACE)
-add_library(stb_ds INTERFACE)
-add_library(stb_rect_pack INTERFACE)
-#add_library(stb_image_write INTERFACE)
-#add_library(stb_image_resize INTERFACE)
-target_include_directories(stb_image INTERFACE thirdparty/stb)
-target_include_directories(stb_ds INTERFACE thirdparty/stb)
-target_include_directories(stb_rect_pack INTERFACE thirdparty/stb)
-#target_include_directories(stb_image_write INTERFACE thirdparty/stb)
-#target_include_directories(stb_image_resize INTERFACE thirdparty/stb)
-
 # Add Nanovg
 file(GLOB_RECURSE nanovg_sources thirdparty/nanovg/src/*.c)
 file(GLOB_RECURSE nanovg_headers thirdparty/nanovg/src/*.h)
@@ -82,15 +70,6 @@ file(GLOB_RECURSE headers src/*.h)
 add_executable(kanvas ${headers} ${sources})
 
 target_link_libraries(kanvas PRIVATE EGL::EGL OpenGLES2::OpenGLES2 SDL2::Main nanovg duktape)
-
-# Add emscripten configuration
-if(EMSCRIPTEN)
-  target_include_directories(kanvas PRIVATE thirdparty/emscripten)
-  # set(CMAKE_EXECUTABLE_SUFFIX ".html")
-  target_compile_options(kanvas PRIVATE "-O3")
-  #target_link_libraries(kanvas PRIVATE "-s ASYNCIFY -O3 -lidbfs.js -s EXPORTED_FUNCTIONS='[\"_sst_web_vm_interpret\",\"_sst_web_vm_set_paused\",\"_sst_web_vram_read_pixel\",\"_main\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]' --preload-file ../glsl --preload-file ../example --preload-file ../wren")
-  target_link_libraries(kanvas PRIVATE "-s ASYNCIFY -s 'ASYNCIFY_IMPORTS=[\"do_fetch\",\"do_fetch_zip\"]' -O3 -lidbfs.js -s EXPORTED_FUNCTIONS='[\"_sst_web_vm_interpret\",\"_sst_web_vm_set_paused\",\"_sst_web_vram_read_pixel\",\"_sst_web_system_loadGame\",\"_main\"]' -s EXPORTED_RUNTIME_METHODS='[\"ccall\",\"cwrap\"]'")
-endif()
 
 # Needed by SDL for console by mingw
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND WIN32)

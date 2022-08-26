@@ -11,10 +11,6 @@
 #include "js.h"
 #include "js_nanovg.h"
 
-#ifdef EMSCRIPTEN
-#include <emscripten/emscripten.h>
-#endif
-
 static duk_context* vm;
 static SDL_Event event;
 static SDL_Window* window;
@@ -62,7 +58,7 @@ int main(int argc, char *argv[]) {
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-  window = SDL_CreateWindow("SuperStation", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+  window = SDL_CreateWindow("Kanvas.js", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
   assert(window != NULL);
 
@@ -71,24 +67,16 @@ int main(int argc, char *argv[]) {
 
   assert(context != NULL);
 
-  
-
   vm = ink_js_init();
   ink_js_nanovg_init(vm);
   ink_js_runFile(vm, "core.js");
   ink_js_runFile(vm, "ink.js");
   ink_js_runFile(vm, "main.js");
 
-
-#ifdef EMSCRIPTEN
-  SST_CALL_TERM(sst_web_init(&State))
-  emscripten_set_main_loop(update, 0, 1);
-#else
   while(!quit){
     Uint32 t = SDL_GetTicks();
     update();
     t = 15-(t-SDL_GetTicks());
     if(t > 0) SDL_Delay(t);
   }
-#endif
 }
