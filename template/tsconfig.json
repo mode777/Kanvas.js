@@ -1,0 +1,18 @@
+{
+	"compilerOptions": {
+		"target": "es5",
+		"lib": [
+			"es6",
+			"dom"
+		],
+		"module": "commonjs",
+		"sourceMap": true,
+		//"inlineSourceMap": true,
+		//"inlineSources": true,
+		"importHelpers": true,
+		"noImplicitAny": false,
+		"noImplicitThis": false,
+		"baseUrl": ".",
+		"paths": {}
+	}
+}

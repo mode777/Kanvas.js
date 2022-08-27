@@ -11,6 +11,8 @@
 #include "js.h"
 #include "js_nanovg.h"
 
+static int _argc;
+static char* _argv[16];
 static duk_context* vm;
 static SDL_Event event;
 static SDL_Window* window;
@@ -19,9 +21,15 @@ static bool quit;
 static void init(){
   vm = kvs_init();
   kvs_nanovg_init(vm);
-  kvs_runFile(vm, "core.js");
-  kvs_runFile(vm, "ink.js");
-  kvs_runFile(vm, "main.js");
+  
+  if(_argc == 1){
+    kvs_runFile(vm, "main.js");
+  } else {
+    for (size_t i = 1; i < _argc; i++)
+    {
+        kvs_runFile(vm, _argv[i]);
+    } 
+  }
 }
 
 static void dispose(){
@@ -67,6 +75,11 @@ static void update(){
 }
 
 int main(int argc, char *argv[]) {
+  _argc = argc;
+  for (size_t i = 0; i < argc; i++)
+  {
+    _argv[i] = argv[i];
+  }
 
   SDL_Init(SDL_INIT_EVERYTHING);
 

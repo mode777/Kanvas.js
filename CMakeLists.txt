@@ -82,3 +82,10 @@ if(WIN32)
   configure_file(${EGL_INCLUDE_DIR}/../bin/libEGL.dll ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libEGL.dll COPYONLY)
   configure_file(${EGL_INCLUDE_DIR}/../bin/libGLESv2.dll ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libGLESv2.dll COPYONLY)
 endif()
+
+# Macos copy dylibs
+if(APPLE)
+  #configure_file(${SDL2_INCLUDE_DIRS}/../../bin/SDL2.dll ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/SDL2.dll COPYONLY)
+  configure_file(${EGL_INCLUDE_DIR}/../bin/libEGL.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libEGL.dylib COPYONLY)
+  configure_file(${EGL_INCLUDE_DIR}/../bin/libGLESv2.dylib ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libGLESv2.dylib COPYONLY)
+endif()

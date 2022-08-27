@@ -7,4 +7,5 @@ build-wasm/
 /*.dylib
 /.vscode
 .DS_Store
-/superstation
+/kanvas
+/kanvas.exe
