@@ -22,6 +22,7 @@ static void init(){
   vm = kvs_init();
   kvs_nanovg_init(vm);
   
+  kvs_runFile(vm, "polyfills.js");
   if(_argc == 1){
     kvs_runFile(vm, "main.js");
   } else {

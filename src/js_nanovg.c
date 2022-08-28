@@ -42,7 +42,7 @@ static void call_animation_frame(duk_context *vm)
     duk_push_global_stash(vm);
     duk_get_prop_index(vm, -1, JS_ANIMATION_FRAME_CALLBACK);
     duk_require_function(vm, -1);
-    double time = ((double)SDL_GetTicks()) / 1000;
+    double time = ((double)SDL_GetTicks());
     duk_push_number(vm, time);
     if (duk_pcall(vm, 1) != 0)
     {
@@ -372,6 +372,18 @@ static duk_ret_t js_vg_text(duk_context *ctx)
     return 0;
 }
 
+static duk_ret_t js_vg_textBox(duk_context *ctx)
+{
+    float x = duk_require_number(ctx, 0);
+    float y = duk_require_number(ctx, 1);
+    float w = duk_require_number(ctx, 2);
+    const char *text = duk_safe_to_string(ctx, 3);
+
+    nvgTextBox(vg,x,y,w,text,NULL);
+
+    return 0;
+}
+
 static duk_ret_t js_vg_textBounds(duk_context *ctx)
 {
     float x = duk_require_number(ctx, 0);
@@ -497,6 +509,11 @@ static duk_ret_t js_vg_resetScissor(duk_context *ctx)
     return 0;
 }
 
+static duk_ret_t js_vg_resetTransform(duk_context* ctx){
+    (void) ctx;
+    nvgResetTransform(vg);
+}
+
 static duk_ret_t js_vg_createFont(duk_context *ctx)
 {
     const char* name = duk_require_string(ctx,0);
@@ -536,6 +553,7 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
       { "save", js_vg_save, 0 },
       { "restore", js_vg_restore, 0 },
       { "text", js_vg_text, 3 },
+      { "textBox", js_vg_textBox, 4 },
       { "pathWinding", js_vg_pathWinding, 1 },
       { "boxGradient", js_vg_boxGradient,14 },
       { "createFont", js_vg_createFont, 2 },
@@ -551,6 +569,7 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
       { "imagePattern", js_vg_imagePattern, 7 },
       { "intersectScissor", js_vg_intersectScissor, 4 },
       { "resetScissor", js_vg_resetScissor, 0 },
+      { "resetTransform", js_vg_resetTransform, 0 },
       { NULL, NULL, 0 }
   };
 
