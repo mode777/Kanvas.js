@@ -29,9 +29,57 @@ void kvs_on_mouse_move(duk_context *vm, int x, int y)
     if(kvs_push_callback(vm, KVS_MOUSE_MOVE_CALLBACK)){
         duk_push_number(vm, x);
         duk_push_number(vm, y);
-        if (duk_pcall(vm, 2) != 0)
+        if (duk_pcall(vm, 2) != 0){ printf("Error in event handler (E): %s\n", duk_safe_to_string(vm, -1));}
+    }
+}
+
+#define KVS_STRING_PROP(K,V) duk_push_string(vm,V);duk_put_prop_string(vm,-2,K)
+#define KVS_NUM_PROP(K,V) duk_push_number(vm,V);duk_put_prop_string(vm,-2,K)
+#define KVS_CALLBACK(E) if (duk_pcall(vm, 1) != 0){ printf("Error in event handler (%s): %s\n",E, duk_safe_to_string(vm, -1));}
+
+static int mouse_x, mouse_y;
+
+void kvs_on_event(duk_context *vm, SDL_Event* event){
+    duk_require_stack(vm, 3);
+    if(kvs_push_callback(vm, "dispatchEvent")){
+        switch (event->type)
         {
-            printf("Error running callback (mousemove): %s\n", duk_safe_to_string(vm, -1));
+            case SDL_MOUSEMOTION:
+                duk_push_object(vm);
+                KVS_STRING_PROP("type", "mousemove");
+                KVS_NUM_PROP("offsetX", event->motion.x);
+                KVS_NUM_PROP("offsetY", event->motion.y);
+                KVS_CALLBACK("mousemove");
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                duk_push_object(vm);
+                KVS_STRING_PROP("type", "mousedown");
+                KVS_NUM_PROP("offsetX", event->button.x);
+                KVS_NUM_PROP("offsetY", event->button.y);
+                KVS_NUM_PROP("button", event->button.button-1);
+                KVS_CALLBACK("mousedown");
+                mouse_x = event->button.x;
+                mouse_y = event->button.y;
+                break;
+            case SDL_MOUSEBUTTONUP:
+                duk_push_object(vm);
+                KVS_STRING_PROP("type", "mouseup");
+                KVS_NUM_PROP("offsetX", event->button.x);
+                KVS_NUM_PROP("offsetY", event->button.y);
+                KVS_NUM_PROP("button", event->button.button-1);
+                KVS_CALLBACK("mouseup");
+                if(event->button.x == mouse_x && event->button.y == mouse_y){
+                    kvs_push_callback(vm, "dispatchEvent");
+                    duk_push_object(vm);
+                    KVS_STRING_PROP("type", "click");
+                    KVS_NUM_PROP("offsetX", event->button.x);
+                    KVS_NUM_PROP("offsetY", event->button.y);
+                    KVS_NUM_PROP("button", event->button.button-1);
+                    KVS_CALLBACK("click");
+                }
+                break;
+            default:
+                break;
         }
     }
 }

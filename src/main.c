@@ -53,12 +53,10 @@ static void update(){
           if(event.key.keysym.scancode == SDL_SCANCODE_F5)
             reset(); 
           break;
-        case SDL_MOUSEMOTION:
-          kvs_on_mouse_move(vm, event.motion.x, event.motion.y);
-          break;
         default:
           break;
       }
+      kvs_on_event(vm, &event);
     }
 
     int w,h;

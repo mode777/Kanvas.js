@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include <duktape.h>
+#include <SDL.h>
 
 #define KVS_ANIMATION_FRAME_CALLBACK "onrender"
 #define KVS_MOUSE_MOVE_CALLBACK "onmousemove"
@@ -14,7 +15,8 @@ void kvs_runFile(duk_context* vm, const char* path);
 void kvs_nanovg_init(duk_context* vm);
 void kvs_nanovg_dispose();
 void kvs_on_render(duk_context* vm);
-void kvs_on_mouse_move(duk_context *vm, int x, int y);
+void kvs_on_event(duk_context *vm, SDL_Event* ev);
+void kvs_on_mouse_button(duk_context *vm, int button, bool down);
 bool kvs_push_callback(duk_context* vm, const char* name);
 
 #endif
