@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdbool.h>
 
 #include <duktape.h>
 #include <nanovg.h>
@@ -7,9 +8,7 @@
 #include <nanovg_gl.h>
 #include <SDL.h>
 
-#include "js_nanovg.h"
-
-#define JS_ANIMATION_FRAME_CALLBACK 0
+#include "js.h"
 
 static NVGcontext *vg;
 
@@ -34,30 +33,6 @@ static NVGcolor parse_html_color(const char *str, int len)
     }
 
     return nvgRGBA(r, g, b, a);
-}
-
-static void call_animation_frame(duk_context *vm)
-{
-    duk_require_stack(vm, 2);
-    duk_push_global_stash(vm);
-    duk_get_prop_index(vm, -1, JS_ANIMATION_FRAME_CALLBACK);
-    duk_require_function(vm, -1);
-    double time = ((double)SDL_GetTicks());
-    duk_push_number(vm, time);
-    if (duk_pcall(vm, 1) != 0)
-    {
-        printf("Error running callback: %s\n", duk_safe_to_string(vm, -1));
-    }
-}
-
-static duk_ret_t js_animation_frame(duk_context *ctx)
-{
-    duk_require_function(ctx, 0);
-    duk_push_global_stash(ctx);
-    duk_dup(ctx, 0);
-    duk_put_prop_index(ctx, -2, JS_ANIMATION_FRAME_CALLBACK);
-    duk_pop(ctx);
-    return 0;
 }
 
 static duk_ret_t js_vg_beginPath(duk_context *ctx)
@@ -415,6 +390,11 @@ static duk_ret_t js_vg_textMetrics(duk_context *ctx)
     return 1;
 }
 
+static duk_ret_t js_vg_clear(duk_context *ctx){
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    return 1;
+}
+
 static duk_ret_t js_vg_createImage(duk_context *ctx)
 {
     const char *filename = duk_safe_to_string(ctx, 0);
@@ -512,6 +492,7 @@ static duk_ret_t js_vg_resetScissor(duk_context *ctx)
 static duk_ret_t js_vg_resetTransform(duk_context* ctx){
     (void) ctx;
     nvgResetTransform(vg);
+    return 0;
 }
 
 static duk_ret_t js_vg_createFont(duk_context *ctx)
@@ -570,6 +551,7 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
       { "intersectScissor", js_vg_intersectScissor, 4 },
       { "resetScissor", js_vg_resetScissor, 0 },
       { "resetTransform", js_vg_resetTransform, 0 },
+      { "clear", js_vg_clear, 0 },
       { NULL, NULL, 0 }
   };
 
@@ -579,8 +561,8 @@ void kvs_nanovg_init(duk_context *vm)
     vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
 
     duk_push_global_object(vm);
-    duk_push_c_function(vm, js_animation_frame, 1);
-    duk_put_prop_string(vm, -2, "requestAnimationFrame");
+    // duk_push_c_function(vm, js_animation_frame, 1);
+    // duk_put_prop_string(vm, -2, "requestAnimationFrame");
 
     int objIndex = duk_push_object(vm);
     duk_put_function_list(vm, -1, my_module_funcs);
@@ -638,13 +620,33 @@ void kvs_nanovg_init(duk_context *vm)
     duk_put_prop_string(vm, objIndex - 1, "vg");
 }
 
-void kvs_nanovg_update(duk_context *vm)
+void kvs_on_render(duk_context *vm)
 {
+    // glClearColor(0.3f,0,0,1);
+
+
     // SDL_GL_GetDrawableSize()
-    nvgBeginFrame(vg, 640, 480, 1);
-    call_animation_frame(vm);
-    nvgEndFrame(vg);
-    // printf("js update\n");
+
+    duk_require_stack(vm, 2);
+    if(kvs_push_callback(vm, KVS_ANIMATION_FRAME_CALLBACK)){
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+
+        double time = ((double)SDL_GetTicks());
+        duk_push_number(vm, time);
+        nvgBeginFrame(vg, 640, 480, 1);
+        if (duk_pcall(vm, 1) != 0)
+        {
+            printf("Error running callback (animationframe): %s\n", duk_safe_to_string(vm, -1));
+        }
+
+        nvgEndFrame(vg);
+        
+        SDL_Window* win = SDL_GL_GetCurrentWindow();
+        SDL_GL_SwapWindow(win);
+    }
 }
 
 void kvs_nanovg_dispose()

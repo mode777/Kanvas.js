@@ -116,7 +116,7 @@ Not much support here yet, as this project just started. Most of it should be fa
 |miterLimit|        no|
 |getLineDash|       no|
 |setLineDash|       no|
-|clearRect|         no|
+|clearRect|         yes|
 |fillRect|          yes|
 |strokeRect|        no|
 |shadowBlur|        partial (text only)|

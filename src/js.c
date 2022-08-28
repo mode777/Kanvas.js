@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #include <SDL.h>
 #include <duktape.h>
@@ -13,6 +14,26 @@ static void my_fatal(void *udata, const char *msg) {
     fprintf(stderr, "*** FATAL ERROR: %s\n", (msg ? msg : "no message"));
     fflush(stderr);
     abort();
+}
+
+bool kvs_push_callback(duk_context* vm, const char* name){
+    duk_push_global_object(vm);
+    duk_get_prop_string(vm, -1, name);
+    if(!duk_is_function(vm, -1)) return false;
+    return true;
+}
+
+void kvs_on_mouse_move(duk_context *vm, int x, int y)
+{
+    duk_require_stack(vm, 3);
+    if(kvs_push_callback(vm, KVS_MOUSE_MOVE_CALLBACK)){
+        duk_push_number(vm, x);
+        duk_push_number(vm, y);
+        if (duk_pcall(vm, 2) != 0)
+        {
+            printf("Error running callback (mousemove): %s\n", duk_safe_to_string(vm, -1));
+        }
+    }
 }
 
 void kvs_runFile(duk_context* vm, const char* path){
@@ -37,11 +58,11 @@ static duk_ret_t js_print(duk_context *ctx) {
 }
 
 duk_context* kvs_init() {
+
     duk_context* vm = duk_create_heap(NULL, NULL, NULL, NULL, my_fatal);
     assert(vm != NULL);
-    
+
     duk_push_global_object(vm);
-    
     int objIndex = duk_push_object(vm);
     duk_push_c_function(vm, js_print, DUK_VARARGS);
     duk_put_prop_string(vm, objIndex, "log");

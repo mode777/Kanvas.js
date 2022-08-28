@@ -2,6 +2,10 @@
 var canvas = window["kanvas"] ? window["kanvas"] : document.getElementById("canvas")
 var ctx = canvas.getContext("2d");
 
+canvas.addEventListener("mousemove", function(ev){
+    console.log(ev.offsetX + "," + ev.offsetY);
+})
+
 function drawTriangle(x1,y1,x2,y2,x3,y3,color){
   ctx.fillStyle = color
   ctx.beginPath()
@@ -17,6 +21,7 @@ function sinval(t,s,a) {
 } 
 
 function loop(time){
+    ctx.clearRect(0,0,640,480)
     ctx.fillStyle = "#fff"
     ctx.fillRect(0,0,640,480)
 

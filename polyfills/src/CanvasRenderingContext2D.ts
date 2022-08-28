@@ -86,7 +86,7 @@ export class CanvasRenderingContext2D {
   imageSmoothingEnabled: boolean;
   imageSmoothingQuality: ImageSmoothingQuality;
   arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterclockwise?: boolean): void {
-    throw new Error('Method not implemented.');
+    vg.arc(x,y,radius,startAngle,endAngle,counterclockwise ? vg.CCW : vg.CW)
   }
   arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): void {
     throw new Error('Method not implemented.');
@@ -124,7 +124,7 @@ export class CanvasRenderingContext2D {
     throw new Error('Method not implemented.');
   }
   clearRect(x: number, y: number, w: number, h: number): void {
-    //throw new Error('Method not implemented.');
+    vg.clear()
   }
   fillRect(x: number, y: number, w: number, h: number): void {
     vg.beginPath();

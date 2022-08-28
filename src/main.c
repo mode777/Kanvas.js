@@ -9,7 +9,6 @@
 #include <duktape.h>
 
 #include "js.h"
-#include "js_nanovg.h"
 
 static int _argc;
 static char* _argv[16];
@@ -21,7 +20,7 @@ static bool quit;
 static void init(){
   vm = kvs_init();
   kvs_nanovg_init(vm);
-  
+
   kvs_runFile(vm, "polyfills.js");
   if(_argc == 1){
     kvs_runFile(vm, "main.js");
@@ -53,6 +52,10 @@ static void update(){
         case SDL_KEYUP:
           if(event.key.keysym.scancode == SDL_SCANCODE_F5)
             reset(); 
+          break;
+        case SDL_MOUSEMOTION:
+          kvs_on_mouse_move(vm, event.motion.x, event.motion.y);
+          break;
         default:
           break;
       }
@@ -62,17 +65,7 @@ static void update(){
     SDL_GL_GetDrawableSize(window, &w, &h);
     bool running;
 
-    glClearColor(0.3f,0,0,1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-
-    kvs_nanovg_update(vm);
-    
-    SDL_GL_SwapWindow(window);
+    kvs_on_render(vm);
 }
 
 int main(int argc, char *argv[]) {
