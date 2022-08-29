@@ -2,9 +2,13 @@ name: CMake
 
 on:
   push:
-    branches: [ "Main" ]
-  pull_request:
-    branches: [ "Main" ]
+    # branches: [ "Main" ]
+    # Pattern matched against refs/tags
+    tags:        
+      - '*'           # Push events to every tag not containing /
+  #pull_request:
+    #branches: [ "Main" ]
+  workflow_dispatch:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
