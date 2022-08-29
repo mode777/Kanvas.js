@@ -19,6 +19,7 @@ static bool quit;
 
 static void init(){
   vm = kvs_init();
+  kvs_init_keys(vm);
   kvs_nanovg_init(vm);
 
   kvs_runFile(vm, "polyfills.js");

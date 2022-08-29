@@ -52,3 +52,5 @@ function requestAnimationFrame(fn){
   window.kanvas.dispatchEvent(ev)
 }
 
+const k = <KeyboardEvent>
+

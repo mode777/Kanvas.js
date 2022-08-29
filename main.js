@@ -3,7 +3,13 @@ var canvas = window["kanvas"] ? window["kanvas"] : document.getElementById("canv
 var ctx = canvas.getContext("2d");
 
 canvas.addEventListener("mousemove", function(ev){
-    console.log(ev.offsetX + "," + ev.offsetY);
+    //console.log(ev.offsetX + "," + ev.offsetY);
+})
+
+canvas.addEventListener("keydown", function(ev){
+  if(!ev.repeat){
+    console.log(ev.key)
+  }
 })
 
 function drawTriangle(x1,y1,x2,y2,x3,y3,color){

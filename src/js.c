@@ -2,6 +2,9 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#define STB_DS_IMPLEMENTATION
+#include "stb_ds.h"
+
 #include <SDL.h>
 #include <duktape.h>
 
@@ -22,20 +25,6 @@ bool kvs_push_callback(duk_context* vm, const char* name){
     if(!duk_is_function(vm, -1)) return false;
     return true;
 }
-
-void kvs_on_mouse_move(duk_context *vm, int x, int y)
-{
-    duk_require_stack(vm, 3);
-    if(kvs_push_callback(vm, KVS_MOUSE_MOVE_CALLBACK)){
-        duk_push_number(vm, x);
-        duk_push_number(vm, y);
-        if (duk_pcall(vm, 2) != 0){ printf("Error in event handler (E): %s\n", duk_safe_to_string(vm, -1));}
-    }
-}
-
-#define KVS_STRING_PROP(K,V) duk_push_string(vm,V);duk_put_prop_string(vm,-2,K)
-#define KVS_NUM_PROP(K,V) duk_push_number(vm,V);duk_put_prop_string(vm,-2,K)
-#define KVS_CALLBACK(E) if (duk_pcall(vm, 1) != 0){ printf("Error in event handler (%s): %s\n",E, duk_safe_to_string(vm, -1));}
 
 static int mouse_x, mouse_y;
 
@@ -77,6 +66,24 @@ void kvs_on_event(duk_context *vm, SDL_Event* event){
                     KVS_NUM_PROP("button", event->button.button-1);
                     KVS_CALLBACK("click");
                 }
+                break;
+            case SDL_KEYUP:
+                duk_push_object(vm);
+                KVS_STRING_PROP("type", "keyup");
+                KVS_BOOL_PROP("repeat", event->key.repeat > 0);
+                KVS_BOOL_PROP("altKey", (event->key.keysym.mod & KMOD_ALT) > 0);
+                KVS_BOOL_PROP("ctrlKey", (event->key.keysym.mod & KMOD_CTRL) > 0);
+                KVS_STRING_PROP("key", kvs_get_key(event->key.keysym.sym));
+                KVS_CALLBACK("keyup");
+                break;
+            case SDL_KEYDOWN:
+                duk_push_object(vm);
+                KVS_STRING_PROP("type", "keydown");
+                KVS_BOOL_PROP("repeat", event->key.repeat > 0);
+                KVS_BOOL_PROP("altKey", (event->key.keysym.mod & KMOD_ALT) > 0);
+                KVS_BOOL_PROP("ctrlKey", (event->key.keysym.mod & KMOD_CTRL) > 0);
+                KVS_STRING_PROP("key", kvs_get_key(event->key.keysym.sym));
+                KVS_CALLBACK("keydown");
                 break;
             default:
                 break;

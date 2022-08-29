@@ -628,7 +628,7 @@ void kvs_on_render(duk_context *vm)
     // SDL_GL_GetDrawableSize()
 
     duk_require_stack(vm, 2);
-    if(kvs_push_callback(vm, KVS_ANIMATION_FRAME_CALLBACK)){
+    if(kvs_push_callback(vm, "onrender")){
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_CULL_FACE);
@@ -636,7 +636,7 @@ void kvs_on_render(duk_context *vm)
 
         double time = ((double)SDL_GetTicks());
         duk_push_number(vm, time);
-        nvgBeginFrame(vg, 640, 480, 1);
+        nvgBeginFrame(vg, 640, 480, 2);
         if (duk_pcall(vm, 1) != 0)
         {
             printf("Error running callback (animationframe): %s\n", duk_safe_to_string(vm, -1));

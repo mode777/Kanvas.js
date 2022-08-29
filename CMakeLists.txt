@@ -11,6 +11,9 @@ message("Building for ${TARGET_ARCH}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stb)
+
 # Add SDL
 if(WIN32)
   if(TARGET_ARCH STREQUAL "x86_32")
@@ -69,7 +72,7 @@ file(GLOB_RECURSE headers src/*.h)
 
 add_executable(kanvas ${headers} ${sources})
 
-target_link_libraries(kanvas PRIVATE EGL::EGL OpenGLES2::OpenGLES2 SDL2::Main nanovg duktape)
+target_link_libraries(kanvas PRIVATE EGL::EGL OpenGLES2::OpenGLES2 SDL2::Main nanovg duktape stb)
 
 # Needed by SDL for console by mingw
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND WIN32)
