@@ -1,11 +1,12 @@
 {
-  "name": "kanwas-template",
+  "name": "kanvas-template",
   "version": "1.0.0",
   "description": "",
   "main": "dist/main.bundle.js",
   "scripts": {
     "build": "webpack",
-    "start": "serve dist"
+    "watch": "webpack --watch"
+    "start": "webpack && cd .. && ./canvas.exe template/dist/main.bundle.js"
   },
   "author": "Alexander Klingenbeck",
   "license": "MIT",
@@ -17,7 +18,6 @@
     "webpack-cli": "^4.7.2"
   },
   "dependencies": {
-    "core-js": "^3.25.0",
     "reflect-metadata": "^0.1.13",
     "tslib": "^1.10.0"
   }
