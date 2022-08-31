@@ -10,6 +10,25 @@
 
 #include "js.h"
 
+static inline int get_int(duk_context* vm, const char* key, int def){
+    duk_get_prop_string(vm, -1, key);
+    int v = duk_get_int_default(vm, -1, def);
+    duk_pop(vm);
+    return v;
+}
+static inline const char* get_string(duk_context* vm, const char* key, const char* def){
+    duk_get_prop_string(vm, -1, key);
+    const char* v = duk_get_string_default(vm, -1, def);
+    duk_pop(vm);
+    return v;
+}
+static inline bool get_bool(duk_context* vm, const char* key, bool def){
+    duk_get_prop_string(vm, -1, key);
+    bool v = duk_get_boolean_default(vm, -1, def);
+    duk_pop(vm);
+    return v;
+}
+
 static void my_fatal(void *udata, const char *msg) {
     (void) udata;  /* ignored in this case, silence warning */
 
@@ -28,7 +47,8 @@ bool kvs_push_callback(duk_context* vm, const char* name){
 
 static int mouse_x, mouse_y;
 
-void kvs_on_event(duk_context *vm, SDL_Event* event){
+void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
+    duk_context* vm = ctx->vm;
     duk_require_stack(vm, 3);
     if(kvs_push_callback(vm, "dispatchEvent")){
         switch (event->type)
@@ -91,17 +111,35 @@ void kvs_on_event(duk_context *vm, SDL_Event* event){
     }
 }
 
-void kvs_runFile(duk_context* vm, const char* path){
+int kvs_run_file(KVS_Context* ctx, const char* path){
+    duk_context* vm = ctx->vm;
     size_t len;
     const char* source = SDL_LoadFile(path, &len);
-    assert(source != NULL);
+    if(source == NULL){
+        return -1;
+    }
     duk_push_lstring(vm, source, (duk_size_t)len);
     
     if (duk_peval(vm) != 0) {
-        printf("Error running: %s\n", duk_safe_to_string(vm, -1));
+        printf("Error running %s: %s\n",path, duk_safe_to_string(vm, -1));
+        return -1;
     }
     duk_pop(vm);
     SDL_free((void*)source);
+    return 0;
+}
+
+int kvs_decode_json(KVS_Context* ctx, const char* path){
+    duk_context* vm = ctx->vm;
+    size_t len;
+    const char* source = SDL_LoadFile(path, &len);
+    if(source == NULL){
+        return -1;
+    }
+    duk_push_lstring(vm, source, (duk_size_t)len);
+    duk_json_decode(vm, -1);
+    SDL_free((void*)source);
+    return 0;
 }
 
 static duk_ret_t js_print(duk_context *ctx) {
@@ -112,18 +150,43 @@ static duk_ret_t js_print(duk_context *ctx) {
     return 0;
 }
 
-duk_context* kvs_init() {
-
+void kvs_init(KVS_Context* ctx, const char* configFile) {
     duk_context* vm = duk_create_heap(NULL, NULL, NULL, NULL, my_fatal);
     assert(vm != NULL);
+    ctx->vm = vm;
+
+    KVS_Config cfg = { .width = 640, .height = 480, .title = "Kanvas.js", .retina = true };
+    ctx->config = cfg;
+
+    if(configFile != NULL && kvs_decode_json(ctx, configFile) == 0){
+        ctx->config.width = get_int(vm, "width", ctx->config.width);  
+        ctx->config.height = get_int(vm, "height", ctx->config.height);
+        ctx->config.title = get_string(vm, "title", ctx->config.title);
+        ctx->config.retina = get_bool(vm, "retina", ctx->config.retina);  
+    }
+    ctx->window = SDL_CreateWindow(ctx->config.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ctx->config.width, ctx->config.height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    assert(ctx->window != NULL);
+    ctx->context = SDL_GL_CreateContext(ctx->window);
+    assert(ctx->context != NULL);
+    SDL_GL_SetSwapInterval(0);
 
     duk_push_global_object(vm);
     int objIndex = duk_push_object(vm);
     duk_push_c_function(vm, js_print, DUK_VARARGS);
     duk_put_prop_string(vm, objIndex, "log");
     duk_put_prop_string(vm, objIndex-1, "console");
-    
-    duk_pop(vm);
 
-    return vm;
+    duk_push_int(vm, ctx->config.width);
+    duk_put_prop_string(vm, -2, "kanvas_width");
+    duk_push_int(vm, ctx->config.height);
+    duk_put_prop_string(vm, -2, "kanvas_height");
+
+
+    duk_pop(vm);
+}
+
+void kvs_dispose(KVS_Context* ctx){
+    SDL_GL_DeleteContext(ctx->context);
+    SDL_DestroyWindow(ctx->window);
+    duk_destroy_heap(ctx->vm);
 }

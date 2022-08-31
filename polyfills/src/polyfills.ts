@@ -14,7 +14,9 @@ if (typeof window === 'undefined') {
 }
 
 class Kanvas {
-  private readonly  listeners = {};
+  private readonly listeners: {[key: string]: any[] } = {};
+  public readonly width = (<any>window).kanvas_width;
+  public readonly height = (<any>window).kanvas_height;
 
   getContext(id){
     return new CanvasRenderingContext2D()
@@ -28,6 +30,11 @@ class Kanvas {
     this.ensureListener(name)
     this.listeners[name].push(fn)
     //console.log(JSON.stringify(this.listeners))
+  }
+  removeEventListener(name,fn){
+    this.ensureListener(name)
+    const idx = this.listeners[name].findIndex((v) => v == fn)
+    this.listeners[name].splice(idx, 1)
   }
   dispatchEvent(event: Event){
     this.ensureListener(event.type)
@@ -52,5 +59,4 @@ function requestAnimationFrame(fn){
   window.kanvas.dispatchEvent(ev)
 }
 
-const k = <KeyboardEvent>
 

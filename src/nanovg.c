@@ -555,32 +555,16 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
       { NULL, NULL, 0 }
   };
 
-void kvs_nanovg_init(duk_context *vm)
+void kvs_nanovg_init(KVS_Context* ctx)
 {
-
+    duk_context *vm = ctx->vm;
     vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
 
     duk_push_global_object(vm);
-    // duk_push_c_function(vm, js_animation_frame, 1);
-    // duk_put_prop_string(vm, -2, "requestAnimationFrame");
-
+ 
     int objIndex = duk_push_object(vm);
     duk_put_function_list(vm, -1, my_module_funcs);
-    // duk_push_c_function(vm, js_vg_beginPath, 0);
-    // duk_put_prop_string(vm, objIndex, "beginPath");
-    // duk_push_c_function(vm, js_vg_rect, 4);
-    // duk_put_prop_string(vm, objIndex, "rect");
-    // duk_push_c_function(vm, js_vg_fillColor, 4);
-    // duk_put_prop_string(vm, objIndex, "fillColor");
-    // duk_push_c_function(vm, js_vg_fill, 0);
-    // duk_put_prop_string(vm, objIndex, "fill");
-    // duk_push_c_function(vm, js_vg_closePath, 0);
-    // duk_put_prop_string(vm, objIndex, "closePath");
-    // duk_push_c_function(vm, js_vg_moveTo, 2);
-    // duk_put_prop_string(vm, objIndex, "moveTo");
-    // duk_push_c_function(vm, js_vg_lineTo, 2);
-    // duk_put_prop_string(vm, objIndex, "lineTo");
-
+ 
     duk_push_uint(vm, NVG_CCW);
     duk_put_prop_string(vm, -2, "CCW");
     duk_push_uint(vm, NVG_CW);
@@ -620,8 +604,10 @@ void kvs_nanovg_init(duk_context *vm)
     duk_put_prop_string(vm, objIndex - 1, "vg");
 }
 
-void kvs_on_render(duk_context *vm)
+void kvs_on_render(KVS_Context* ctx)
 {
+    duk_context *vm = ctx->vm;
+
     // glClearColor(0.3f,0,0,1);
 
 
@@ -636,7 +622,11 @@ void kvs_on_render(duk_context *vm)
 
         double time = ((double)SDL_GetTicks());
         duk_push_number(vm, time);
-        nvgBeginFrame(vg, 640, 480, 2);
+        int ww,wh,rw,rh;
+        SDL_GL_GetDrawableSize(ctx->window, &rw, &rh);
+        SDL_GetWindowSize(ctx->window, &ww,&wh);
+        glViewport(0,0,rw,rh);
+        nvgBeginFrame(vg, ctx->config.width, ctx->config.height, ctx->config.retina ? rw/ww : 1);
         if (duk_pcall(vm, 1) != 0)
         {
             printf("Error running callback (animationframe): %s\n", duk_safe_to_string(vm, -1));
