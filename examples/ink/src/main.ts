@@ -2,21 +2,21 @@ import * as ink from 'inkjs/dist/ink-full'
 import contents from './../ink/example.ink';
 import intercept from './../ink/intercept.ink';
 
-// var story = new ink.Story(intercept);
+var story = new ink.Story(intercept);
 
-// while(story.canContinue){
-//     while (story.canContinue) {
-//         console.log(story.Continue());
-//     }
-//     if( story.currentChoices.length > 0 )
-//     {
-//         for (var i = 0; i < story.currentChoices.length; i++) {
-//             var choice = story.currentChoices[i];
-//             console.log("Choice " + (i + 1) + ". " + choice.text);
-//         }
-//         story.ChooseChoiceIndex(0);
-//     }
-// }
+while(story.canContinue){
+    while (story.canContinue) {
+        console.log(story.Continue());
+    }
+    if( story.currentChoices.length > 0 )
+    {
+        for (var i = 0; i < story.currentChoices.length; i++) {
+            var choice = story.currentChoices[i];
+            console.log("Choice " + (i + 1) + ". " + choice.text);
+        }
+        story.ChooseChoiceIndex(0);
+    }
+}
 
 const canvas = window["kanvas"] ?? <HTMLCanvasElement>document.getElementById("canvas")
 
@@ -52,17 +52,12 @@ function sinval(t:number,s:number,a:number): number {
 function waitKey(): Promise<void> {
   return new Promise((res,rej) => {
     const handler = (ev) => {
-      console.log("a")
       res()
       removeEventListener("keydown",handler)
     }
     addEventListener("keydown", handler);
   })
 }
-
-const p = waitKey().then(() => console.log("KEY!!!"));
-
-
 
 (async function main(){
 

@@ -16,6 +16,7 @@ typedef struct {
     int height;
     const char* title;
     bool retina;
+    bool resizable;
 } KVS_Config;
 
 typedef struct {

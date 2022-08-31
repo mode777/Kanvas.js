@@ -156,7 +156,7 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
     assert(vm != NULL);
     ctx->vm = vm;
 
-    KVS_Config cfg = { .width = 640, .height = 480, .title = "Kanvas.js", .retina = true };
+    KVS_Config cfg = { .width = 640, .height = 480, .title = "Kanvas.js", .retina = true, .resizable = false };
     ctx->config = cfg;
 
     if(configFile != NULL && kvs_decode_json(ctx, configFile) == 0){
@@ -164,8 +164,9 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
         ctx->config.height = get_int(vm, "height", ctx->config.height);
         ctx->config.title = get_string(vm, "title", ctx->config.title);
         ctx->config.retina = get_bool(vm, "retina", ctx->config.retina);  
+        ctx->config.resizable = get_bool(vm, "resizable", ctx->config.resizable);  
     }
-    ctx->window = SDL_CreateWindow(ctx->config.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ctx->config.width, ctx->config.height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    ctx->window = SDL_CreateWindow(ctx->config.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ctx->config.width, ctx->config.height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | (ctx->config.resizable ? SDL_WINDOW_RESIZABLE : 0) | SDL_WINDOW_ALLOW_HIGHDPI);
     assert(ctx->window != NULL);
     ctx->context = SDL_GL_CreateContext(ctx->window);
     assert(ctx->context != NULL);
