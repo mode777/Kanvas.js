@@ -37,6 +37,7 @@ void kvs_nanovg_dispose();
 void kvs_on_render(KVS_Context* ctx);
 
 void kvs_on_event(KVS_Context* ctx, SDL_Event* ev);
+void kvs_run_task_queue(KVS_Context* ctx);
 bool kvs_push_callback(duk_context* vm, const char* name);
 
 void kvs_init_keys();

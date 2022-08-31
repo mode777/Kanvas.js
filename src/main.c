@@ -61,6 +61,7 @@ static void update(){
       }
       kvs_on_event(&ctx, &event);
     }
+    kvs_run_task_queue(&ctx);
 
     bool running;
 
@@ -84,8 +85,6 @@ int main(int argc, char *argv[]) {
   SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-
-
 
   init();  
 

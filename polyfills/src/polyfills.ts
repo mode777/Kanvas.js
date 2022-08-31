@@ -66,11 +66,18 @@ class Kanvas {
   }
   dispatchEvent(event: Event){
     this.ensureListener(event.type)
-    //console.log(JSON.stringify(this.listeners))
-
-    for (const listener of this.listeners[event.type]) {
-      listener.apply(this, [event])
+    //console.log(event.type, this.listeners[event.type].length)
+    const listeners = this.listeners[event.type]
+    if(listeners.length > 0){
+      const copy = [...listeners]
+      //let i = 1
+      for (const listener of copy) {
+        //console.log("dispatch " + i++)
+        listener.apply(this, [event])
+      }
     }
+
+    
   }
 }
 
@@ -89,5 +96,22 @@ function requestAnimationFrame(fn){
 
 (<any>window).addEventListener = (n,cb) => kanvas.addEventListener.apply(kanvas, [n,cb]);
 (<any>window).removeEventListener = (n,cb) => kanvas.removeEventListener.apply(kanvas, [n,cb]);
+(<any>window).dispatchEvent = (e) => kanvas.dispatchEvent.apply(kanvas, [e]);
 
+class Event {
+  public type: string
+  constructor(type: string, init: EventInit){
+    this.type = type;
+  }
+}
 
+class CustomEvent<T = any> extends Event {
+  public detail: T;
+  constructor(type: string, init: CustomEventInit){
+    super(type, init)
+    this.detail = init.detail
+  }
+}
+
+(<any>window).Event = Event;
+(<any>window).CustomEvent = CustomEvent;

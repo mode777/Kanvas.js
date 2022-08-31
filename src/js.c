@@ -192,3 +192,13 @@ void kvs_dispose(KVS_Context* ctx){
     SDL_DestroyWindow(ctx->window);
     duk_destroy_heap(ctx->vm);
 }
+
+void kvs_run_task_queue(KVS_Context* ctx){
+    duk_context* vm = ctx->vm;
+    duk_require_stack(vm, 3);
+    duk_push_global_object(vm);
+    duk_get_prop_string(vm, -1, "Promise");
+    duk_get_prop_string(vm, -1, "runQueue");
+    duk_pcall(vm, 0);
+    duk_pop_3(vm);
+}
