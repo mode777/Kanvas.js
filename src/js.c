@@ -116,6 +116,7 @@ int kvs_run_file(KVS_Context* ctx, const char* path){
     size_t len;
     const char* source = SDL_LoadFile(path, &len);
     if(source == NULL){
+        printf("File not found: %s\n", path);
         return -1;
     }
     duk_push_lstring(vm, source, (duk_size_t)len);

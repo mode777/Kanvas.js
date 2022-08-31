@@ -612,8 +612,13 @@ void kvs_on_render(KVS_Context* ctx)
 
 
     // SDL_GL_GetDrawableSize()
+    duk_require_stack(vm, 3);
+    duk_push_global_object(vm);
+    duk_get_prop_string(vm, -1, "Promise");
+    duk_get_prop_string(vm, -1, "runQueue");
+    duk_pcall(vm, 0);
+    duk_pop_3(vm);
 
-    duk_require_stack(vm, 2);
     if(kvs_push_callback(vm, "onrender")){
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
