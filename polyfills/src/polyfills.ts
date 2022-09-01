@@ -1,13 +1,13 @@
 import 'core-js/actual/array';
-import 'core-js/actual/array-buffer';
-import 'core-js/actual/data-view';
+//import 'core-js/actual/array-buffer';
+//import 'core-js/actual/data-view';
 import 'core-js/actual/date';
 import 'core-js/actual/dom-collections';
 import 'core-js/actual/dom-exception';
 import 'core-js/actual/error';
 import 'core-js/actual/function';
 //import 'core-js/actual/instance';
-import 'core-js/actual/json';
+//import 'core-js/actual/json';
 import 'core-js/actual/map';
 import 'core-js/actual/math';
 import 'core-js/actual/number';
@@ -17,15 +17,13 @@ import './../../thirdparty/duktape/polyfills/promise'
 import 'core-js/actual/reflect';
 import 'core-js/actual/regexp';
 import 'core-js/actual/set';
-import 'core-js/actual/set';
 import 'core-js/actual/string';
 import 'core-js/actual/symbol';
-import 'core-js/actual/typed-array';
+//import 'core-js/actual/typed-array';
 import 'core-js/actual/url';
 import 'core-js/actual/url-search-params';
 import 'core-js/actual/weak-map';
 import 'core-js/actual/weak-set';
-
 
 import { CanvasRenderingContext2D } from './CanvasRenderingContext2D';
 

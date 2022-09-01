@@ -555,7 +555,7 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
       { NULL, NULL, 0 }
   };
 
-void kvs_nanovg_init(KVS_Context* ctx)
+void kvs_init_vg(KVS_Context* ctx)
 {
     duk_context *vm = ctx->vm;
     vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES);

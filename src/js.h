@@ -37,7 +37,7 @@ void kvs_dispose(KVS_Context* ctx);
 int kvs_run_file(KVS_Context* ctx, const char* path);
 int kvs_decode_json(KVS_Context* ctx, const char* path);
 
-void kvs_nanovg_init(KVS_Context* ctx);
+void kvs_init_vg(KVS_Context* ctx);
 void kvs_nanovg_dispose();
 void kvs_on_render(KVS_Context* ctx);
 
@@ -49,5 +49,7 @@ void kvs_print_error(KVS_Context* ctx, KVS_ErrorType type);
 
 void kvs_init_keys();
 const char* kvs_get_key(SDL_Keycode sym);
+
+void kvs_init_fs(KVS_Context* ctx);
 
 #endif

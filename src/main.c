@@ -21,7 +21,8 @@ static bool quit;
 static void init(){
   kvs_init(&ctx, "kanvas.json");
   kvs_init_keys();
-  kvs_nanovg_init(&ctx);
+  kvs_init_fs(&ctx);
+  kvs_init_vg(&ctx);
 
   kvs_run_file(&ctx, "./polyfills.js");
   //kvs_run_file(&ctx, "./thirdparty/duktape/polyfills/promise.js");
