@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <SDL.h>
 #include <duktape.h>
 
 #include "js.h"
+
+
 
 duk_ret_t js_fs_close(duk_context *ctx){
     duk_require_object(ctx, 0);
@@ -15,6 +18,36 @@ duk_ret_t js_fs_close(duk_context *ctx){
         duk_put_prop_string(ctx, 0, "_ptr");
     }
 }
+
+duk_ret_t js_fs_readFile(duk_context* ctx){
+    const char* path = duk_require_string(ctx, 0);
+    size_t size;
+    unsigned char* f = SDL_LoadFile(path, &size);
+    if(f == NULL) return -1;
+    
+    duk_push_fixed_buffer(ctx, size);
+
+    const char* ptr = duk_get_buffer_data(ctx, -1, &size);
+    memcpy((void*)ptr, (void*)f, size);
+    SDL_free((void*)f);
+
+    duk_push_buffer_object(ctx,-1,0,size,DUK_BUFOBJ_ARRAYBUFFER);
+
+    return 1;
+}
+
+duk_ret_t js_fs_readText(duk_context* ctx){
+    const char* path = duk_require_string(ctx, 0);
+    size_t size;
+    unsigned char* f = SDL_LoadFile(path, &size);
+    if(f == NULL) return -1;
+    
+    duk_push_lstring(ctx, f, size);
+    SDL_free((void*)f);
+
+    return 1;
+}
+
 
 duk_ret_t js_fs_open(duk_context *ctx)
 {
@@ -46,6 +79,12 @@ void kvs_init_fs(KVS_Context* ctx) {
 
         duk_push_c_function(vm, js_fs_close, 2);
         duk_put_prop_string(vm, -2, "close");
+
+        duk_push_c_function(vm, js_fs_readFile, 1);
+        duk_put_prop_string(vm, -2, "readFile");
+
+        duk_push_c_function(vm, js_fs_readText, 1);
+        duk_put_prop_string(vm, -2, "readText");
 
     duk_put_prop_string(vm, -2, "fs");
     duk_pop(vm);
