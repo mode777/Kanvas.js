@@ -12,6 +12,12 @@ canvas.addEventListener("keydown", function(ev){
   }
 })
 
+var file = fs.open('main.js','rb');
+console.log(file._ptr)
+fs.close(file)
+console.log(file._ptr)
+fs.close(file)
+
 function drawTriangle(x1,y1,x2,y2,x3,y3,color){
   ctx.fillStyle = color
   ctx.beginPath()
