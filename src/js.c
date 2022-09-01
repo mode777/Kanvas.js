@@ -58,7 +58,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_STRING_PROP("type", "mousemove");
                 KVS_NUM_PROP("offsetX", event->motion.x);
                 KVS_NUM_PROP("offsetY", event->motion.y);
-                KVS_CALLBACK("mousemove");
+                KVS_CALLBACK();
                 break;
             case SDL_MOUSEBUTTONDOWN:
                 duk_push_object(vm);
@@ -66,7 +66,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_NUM_PROP("offsetX", event->button.x);
                 KVS_NUM_PROP("offsetY", event->button.y);
                 KVS_NUM_PROP("button", event->button.button-1);
-                KVS_CALLBACK("mousedown");
+                KVS_CALLBACK();
                 mouse_x = event->button.x;
                 mouse_y = event->button.y;
                 break;
@@ -76,7 +76,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_NUM_PROP("offsetX", event->button.x);
                 KVS_NUM_PROP("offsetY", event->button.y);
                 KVS_NUM_PROP("button", event->button.button-1);
-                KVS_CALLBACK("mouseup");
+                KVS_CALLBACK();
                 if(event->button.x == mouse_x && event->button.y == mouse_y){
                     kvs_push_callback(vm, "dispatchEvent");
                     duk_push_object(vm);
@@ -84,7 +84,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                     KVS_NUM_PROP("offsetX", event->button.x);
                     KVS_NUM_PROP("offsetY", event->button.y);
                     KVS_NUM_PROP("button", event->button.button-1);
-                    KVS_CALLBACK("click");
+                    KVS_CALLBACK();
                 }
                 break;
             case SDL_KEYUP:
@@ -94,7 +94,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_BOOL_PROP("altKey", (event->key.keysym.mod & KMOD_ALT) > 0);
                 KVS_BOOL_PROP("ctrlKey", (event->key.keysym.mod & KMOD_CTRL) > 0);
                 KVS_STRING_PROP("key", kvs_get_key(event->key.keysym.sym));
-                KVS_CALLBACK("keyup");
+                KVS_CALLBACK();
                 break;
             case SDL_KEYDOWN:
                 duk_push_object(vm);
@@ -103,7 +103,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_BOOL_PROP("altKey", (event->key.keysym.mod & KMOD_ALT) > 0);
                 KVS_BOOL_PROP("ctrlKey", (event->key.keysym.mod & KMOD_CTRL) > 0);
                 KVS_STRING_PROP("key", kvs_get_key(event->key.keysym.sym));
-                KVS_CALLBACK("keydown");
+                KVS_CALLBACK();
                 break;
             default:
                 break;
@@ -119,15 +119,35 @@ int kvs_run_file(KVS_Context* ctx, const char* path){
         printf("File not found: %s\n", path);
         return -1;
     }
-    duk_push_lstring(vm, source, (duk_size_t)len);
-    
-    if (duk_peval(vm) != 0) {
-        printf("Error running %s: %s\n",path, duk_safe_to_string(vm, -1));
-        return -1;
+    int result = 0;
+    duk_push_string(vm, path);
+    if (duk_pcompile_lstring_filename(vm, 0, source, len) != 0) {
+        kvs_print_error(ctx, KVS_COMPILE);
+        result = -1;
+    } else {
+        if(duk_pcall(vm, 0) != 0){
+            kvs_print_error(ctx, KVS_RUNTIME);
+            result = -1;
+        }
+        duk_pop(vm);
     }
     duk_pop(vm);
+
     SDL_free((void*)source);
-    return 0;
+    return result;
+}
+
+void kvs_print_error(KVS_Context* ctx, KVS_ErrorType type){
+    duk_context* vm = ctx->vm;
+    const char* name = get_string(vm, "name", "");
+    const char* message = get_string(vm, "message", "");
+    printf("%s: %s\n", name, message);
+    const char* file = get_string(vm, "fileName", "");
+    int line = get_int(vm, "lineNumber", 0);
+    int col = get_int(vm, "columnNumber", 0);
+    printf("at %s:%d:%d\n", file, line, col);
+    const char* stack = get_string(vm, "stack", "");
+    printf("%s\n",stack);
 }
 
 int kvs_decode_json(KVS_Context* ctx, const char* path){

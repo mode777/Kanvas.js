@@ -23,10 +23,10 @@ static void init(){
   kvs_init_keys();
   kvs_nanovg_init(&ctx);
 
-  kvs_run_file(&ctx, "polyfills.js");
+  kvs_run_file(&ctx, "./polyfills.js");
   //kvs_run_file(&ctx, "./thirdparty/duktape/polyfills/promise.js");
   if(_argc == 1){
-    kvs_run_file(&ctx, "main.js");
+    kvs_run_file(&ctx, "./main.js");
   } else {
     for (size_t i = 1; i < _argc; i++)
     {

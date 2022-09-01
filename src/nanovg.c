@@ -629,7 +629,7 @@ void kvs_on_render(KVS_Context* ctx)
         nvgBeginFrame(vg, ctx->config.width, ctx->config.height, ctx->config.retina ? rw/ww : 1);
         if (duk_pcall(vm, 1) != 0)
         {
-            printf("Error running callback (animationframe): %s\n", duk_safe_to_string(vm, -1));
+            kvs_print_error(ctx, KVS_RUNTIME);
         }
 
         nvgEndFrame(vg);
