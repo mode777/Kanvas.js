@@ -58,7 +58,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_STRING_PROP("type", "mousemove");
                 KVS_NUM_PROP("offsetX", event->motion.x);
                 KVS_NUM_PROP("offsetY", event->motion.y);
-                KVS_CALLBACK("mousemove");
+                KVS_CALLBACK();
                 break;
             case SDL_MOUSEBUTTONDOWN:
                 duk_push_object(vm);
@@ -66,7 +66,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_NUM_PROP("offsetX", event->button.x);
                 KVS_NUM_PROP("offsetY", event->button.y);
                 KVS_NUM_PROP("button", event->button.button-1);
-                KVS_CALLBACK("mousedown");
+                KVS_CALLBACK();
                 mouse_x = event->button.x;
                 mouse_y = event->button.y;
                 break;
@@ -76,7 +76,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_NUM_PROP("offsetX", event->button.x);
                 KVS_NUM_PROP("offsetY", event->button.y);
                 KVS_NUM_PROP("button", event->button.button-1);
-                KVS_CALLBACK("mouseup");
+                KVS_CALLBACK();
                 if(event->button.x == mouse_x && event->button.y == mouse_y){
                     kvs_push_callback(vm, "dispatchEvent");
                     duk_push_object(vm);
@@ -84,7 +84,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                     KVS_NUM_PROP("offsetX", event->button.x);
                     KVS_NUM_PROP("offsetY", event->button.y);
                     KVS_NUM_PROP("button", event->button.button-1);
-                    KVS_CALLBACK("click");
+                    KVS_CALLBACK();
                 }
                 break;
             case SDL_KEYUP:
@@ -94,7 +94,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_BOOL_PROP("altKey", (event->key.keysym.mod & KMOD_ALT) > 0);
                 KVS_BOOL_PROP("ctrlKey", (event->key.keysym.mod & KMOD_CTRL) > 0);
                 KVS_STRING_PROP("key", kvs_get_key(event->key.keysym.sym));
-                KVS_CALLBACK("keyup");
+                KVS_CALLBACK();
                 break;
             case SDL_KEYDOWN:
                 duk_push_object(vm);
@@ -103,7 +103,7 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_BOOL_PROP("altKey", (event->key.keysym.mod & KMOD_ALT) > 0);
                 KVS_BOOL_PROP("ctrlKey", (event->key.keysym.mod & KMOD_CTRL) > 0);
                 KVS_STRING_PROP("key", kvs_get_key(event->key.keysym.sym));
-                KVS_CALLBACK("keydown");
+                KVS_CALLBACK();
                 break;
             default:
                 break;
@@ -116,17 +116,38 @@ int kvs_run_file(KVS_Context* ctx, const char* path){
     size_t len;
     const char* source = SDL_LoadFile(path, &len);
     if(source == NULL){
+        printf("File not found: %s\n", path);
         return -1;
     }
-    duk_push_lstring(vm, source, (duk_size_t)len);
-    
-    if (duk_peval(vm) != 0) {
-        printf("Error running %s: %s\n",path, duk_safe_to_string(vm, -1));
-        return -1;
+    int result = 0;
+    duk_push_string(vm, path);
+    if (duk_pcompile_lstring_filename(vm, 0, source, len) != 0) {
+        kvs_print_error(ctx, KVS_COMPILE);
+        result = -1;
+    } else {
+        if(duk_pcall(vm, 0) != 0){
+            kvs_print_error(ctx, KVS_RUNTIME);
+            result = -1;
+        }
+        duk_pop(vm);
     }
     duk_pop(vm);
+
     SDL_free((void*)source);
-    return 0;
+    return result;
+}
+
+void kvs_print_error(KVS_Context* ctx, KVS_ErrorType type){
+    duk_context* vm = ctx->vm;
+    const char* name = get_string(vm, "name", "");
+    const char* message = get_string(vm, "message", "");
+    printf("%s: %s\n", name, message);
+    const char* file = get_string(vm, "fileName", "");
+    int line = get_int(vm, "lineNumber", 0);
+    int col = get_int(vm, "columnNumber", 0);
+    printf("at %s:%d:%d\n", file, line, col);
+    const char* stack = get_string(vm, "stack", "");
+    printf("%s\n",stack);
 }
 
 int kvs_decode_json(KVS_Context* ctx, const char* path){
@@ -155,7 +176,7 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
     assert(vm != NULL);
     ctx->vm = vm;
 
-    KVS_Config cfg = { .width = 640, .height = 480, .title = "Kanvas.js", .retina = true };
+    KVS_Config cfg = { .width = 640, .height = 480, .title = "Kanvas.js", .retina = true, .resizable = false };
     ctx->config = cfg;
 
     if(configFile != NULL && kvs_decode_json(ctx, configFile) == 0){
@@ -163,8 +184,9 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
         ctx->config.height = get_int(vm, "height", ctx->config.height);
         ctx->config.title = get_string(vm, "title", ctx->config.title);
         ctx->config.retina = get_bool(vm, "retina", ctx->config.retina);  
+        ctx->config.resizable = get_bool(vm, "resizable", ctx->config.resizable);  
     }
-    ctx->window = SDL_CreateWindow(ctx->config.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ctx->config.width, ctx->config.height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    ctx->window = SDL_CreateWindow(ctx->config.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ctx->config.width, ctx->config.height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | (ctx->config.resizable ? SDL_WINDOW_RESIZABLE : 0) | SDL_WINDOW_ALLOW_HIGHDPI);
     assert(ctx->window != NULL);
     ctx->context = SDL_GL_CreateContext(ctx->window);
     assert(ctx->context != NULL);
@@ -189,4 +211,14 @@ void kvs_dispose(KVS_Context* ctx){
     SDL_GL_DeleteContext(ctx->context);
     SDL_DestroyWindow(ctx->window);
     duk_destroy_heap(ctx->vm);
+}
+
+void kvs_run_task_queue(KVS_Context* ctx){
+    duk_context* vm = ctx->vm;
+    duk_require_stack(vm, 3);
+    duk_push_global_object(vm);
+    duk_get_prop_string(vm, -1, "Promise");
+    duk_get_prop_string(vm, -1, "runQueue");
+    duk_pcall(vm, 0);
+    duk_pop_3(vm);
 }

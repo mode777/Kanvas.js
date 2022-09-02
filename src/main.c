@@ -21,11 +21,13 @@ static bool quit;
 static void init(){
   kvs_init(&ctx, "kanvas.json");
   kvs_init_keys();
-  kvs_nanovg_init(&ctx);
+  kvs_init_fs(&ctx);
+  kvs_init_vg(&ctx);
 
-  kvs_run_file(&ctx, "polyfills.js");
+  kvs_run_file(&ctx, "./polyfills.js");
+  //kvs_run_file(&ctx, "./thirdparty/duktape/polyfills/promise.js");
   if(_argc == 1){
-    kvs_run_file(&ctx, "main.js");
+    kvs_run_file(&ctx, "./main.js");
   } else {
     for (size_t i = 1; i < _argc; i++)
     {
@@ -60,6 +62,7 @@ static void update(){
       }
       kvs_on_event(&ctx, &event);
     }
+    kvs_run_task_queue(&ctx);
 
     bool running;
 
@@ -83,8 +86,6 @@ int main(int argc, char *argv[]) {
   SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-
-
 
   init();  
 

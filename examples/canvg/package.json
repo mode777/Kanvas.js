@@ -1,16 +1,17 @@
 {
-  "name": "kanvas-polyfills",
+  "name": "canvg-example",
   "version": "1.0.0",
   "description": "",
   "main": "dist/main.bundle.js",
   "scripts": {
     "build": "webpack",
-    "start": "serve dist",
-    "watch": "webpack --watch"
+    "watch": "webpack --watch",
+    "start": "serve dist"
   },
   "author": "Alexander Klingenbeck",
   "license": "MIT",
   "devDependencies": {
+    "schema-utils": "^4.0.0",
     "serve": "^12.0.0",
     "ts-loader": "^6.2.0",
     "typescript": "^3.6.3",
@@ -18,8 +19,10 @@
     "webpack-cli": "^4.7.2"
   },
   "dependencies": {
+    "canvg": "^4.0.1",
     "core-js": "^3.25.0",
     "reflect-metadata": "^0.1.13",
-    "tslib": "^2.4.0"
+    "tslib": "^1.10.0",
+    "xmldom": "^0.6.0"
   }
 }

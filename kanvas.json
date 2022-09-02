@@ -2,5 +2,6 @@
     "width": 640,
     "height": 480,
     "retina": true,
-    "title": "Kanvas!" 
+    "title": "Kanvas!", 
+    "resizable": false
 }

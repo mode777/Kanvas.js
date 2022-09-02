@@ -1,3 +1,5 @@
+import { Path2D } from "./Path2d";
+
 export class CanvasRenderingContext2D {
   constructor(){
     this.fillStyle = "#000"
@@ -31,6 +33,12 @@ export class CanvasRenderingContext2D {
   fill(path?: unknown, fillRule?: unknown): void {
     // TODO: Implement more
     vg.fillColor(this.fillStyle);
+    if(path){
+      for(const command of (<Path2D>path).commands){
+        //console.log(command.name);
+        CanvasRenderingContext2D.prototype[command.name].apply(this, command.args);
+      }
+    }
     vg.fill();
   }
   isPointInPath(x: number, y: number, fillRule?: CanvasFillRule): boolean;
@@ -92,13 +100,13 @@ export class CanvasRenderingContext2D {
     throw new Error('Method not implemented.');
   }
   bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void {
-    throw new Error('Method not implemented.');
+    vg.bezierTo(cp1x,cp1y,cp2x,cp2y,x,y);
   }
   closePath(): void {
     vg.closePath()
   }
   ellipse(x: number, y: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number, counterclockwise?: boolean): void {
-    throw new Error('Method not implemented.');
+    vg.ellipse(x,y,radiusX,radiusY)
   }
   lineTo(x: number, y: number): void {
     vg.lineTo(x,y)
@@ -107,10 +115,10 @@ export class CanvasRenderingContext2D {
     vg.moveTo(x,y)
   }
   quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void {
-    throw new Error('Method not implemented.');
+    vg.quadTo();
   }
   rect(x: number, y: number, w: number, h: number): void {
-    throw new Error('Method not implemented.');
+    vg.rect(x,y,w,h);
   }
   lineCap: CanvasLineCap;
   lineDashOffset: number;
@@ -225,7 +233,7 @@ export class CanvasRenderingContext2D {
     vg.resetTransform();
   }
   rotate(angle: number): void {
-    throw new Error('Method not implemented.');
+    vg.rotate(angle);
   }
   scale(x: number, y: number): void {
     throw new Error('Method not implemented.');

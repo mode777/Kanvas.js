@@ -11,6 +11,7 @@
   "author": "Alexander Klingenbeck",
   "license": "MIT",
   "devDependencies": {
+    "schema-utils": "^4.0.0",
     "serve": "^12.0.0",
     "ts-loader": "^6.2.0",
     "typescript": "^3.6.3",

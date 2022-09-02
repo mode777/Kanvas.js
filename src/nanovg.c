@@ -304,6 +304,16 @@ static duk_ret_t js_vg_bezierTo(duk_context *ctx)
     return 0;
 }
 
+static duk_ret_t js_vg_quadTo(duk_context *ctx)
+{
+    float x0 = duk_require_number(ctx, 0);
+    float y0 = duk_require_number(ctx, 1);
+    float x1 = duk_require_number(ctx, 2);
+    float y1 = duk_require_number(ctx, 3);
+    nvgQuadTo(vg, x0,y0,x1,y1);
+    return 0;
+}
+
 static duk_ret_t js_vg_fontSize(duk_context *ctx)
 {
     float sz = duk_require_number(ctx, 0);
@@ -525,6 +535,7 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
       { "circle", js_vg_circle, 3 },
       { "ellipse", js_vg_ellipse, 4 },
       { "bezierTo", js_vg_bezierTo, 6 },
+      { "quadTo", js_vg_quadTo, 4 },
       { "roundedRect", js_vg_roundedRect, 5 },
       { "linearGradient", js_vg_linearGradient, 12 },
       { "radialGradient", js_vg_radialGradient, 12 },
@@ -555,7 +566,7 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
       { NULL, NULL, 0 }
   };
 
-void kvs_nanovg_init(KVS_Context* ctx)
+void kvs_init_vg(KVS_Context* ctx)
 {
     duk_context *vm = ctx->vm;
     vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
@@ -629,7 +640,7 @@ void kvs_on_render(KVS_Context* ctx)
         nvgBeginFrame(vg, ctx->config.width, ctx->config.height, ctx->config.retina ? rw/ww : 1);
         if (duk_pcall(vm, 1) != 0)
         {
-            printf("Error running callback (animationframe): %s\n", duk_safe_to_string(vm, -1));
+            kvs_print_error(ctx, KVS_RUNTIME);
         }
 
         nvgEndFrame(vg);
