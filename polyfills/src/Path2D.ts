@@ -1,13 +1,16 @@
-export class SvgCommand {
+class SvgCommand {
   constructor(public readonly name: string, public readonly args: any[]) { }
 }
 
 export class Path2D {
 
-  private readonly commands: SvgCommand[] = [];
+  public readonly commands: SvgCommand[] = [];
 
   constructor(path?: Path2D | string) {
     this.pushCommand("beginPath", []);
+    if(typeof(path) == "string"){
+      this.parse(path)
+    }
   }
 
   private pushCommand(name, args) {

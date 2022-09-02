@@ -2,15 +2,8 @@
 var canvas = window["kanvas"] ? window["kanvas"] : document.getElementById("canvas")
 var ctx = canvas.getContext("2d");
 
-canvas.addEventListener("mousemove", function(ev){
-    //console.log(ev.offsetX + "," + ev.offsetY);
-})
-
-canvas.addEventListener("keydown", function(ev){
-  if(!ev.repeat){
-    console.log(ev.key)
-  }
-})
+var p = new Path2D("m-9.8,174.4s-2.8,22.4,0.4,30.8,2.4,10.4,1.6,14.4,3.6,14,9.2,20l12,1.6s15.2-3.6,24.4-0.8c0,0,8.994,1.34,12.4-13.6,0,0,4.8-6.4,12-9.2s14.4-44.4,10.4-52.4-18.4-12.4-34.4,3.2-18-1.2-48,6z");
+console.log(p instanceof Path2D)
 
 function drawTriangle(x1,y1,x2,y2,x3,y3,color){
   ctx.fillStyle = color
@@ -44,7 +37,9 @@ function loop(time){
     ctx.fillText("Kanvas",120,85)
 
     ctx.shadowBlur = 0
+    ctx.fill(p);
     ctx.resetTransform();
+    
 
     requestAnimationFrame(loop);
 }

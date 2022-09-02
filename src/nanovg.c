@@ -304,6 +304,16 @@ static duk_ret_t js_vg_bezierTo(duk_context *ctx)
     return 0;
 }
 
+static duk_ret_t js_vg_quadTo(duk_context *ctx)
+{
+    float x0 = duk_require_number(ctx, 0);
+    float y0 = duk_require_number(ctx, 1);
+    float x1 = duk_require_number(ctx, 2);
+    float y1 = duk_require_number(ctx, 3);
+    nvgQuadTo(vg, x0,y0,x1,y1);
+    return 0;
+}
+
 static duk_ret_t js_vg_fontSize(duk_context *ctx)
 {
     float sz = duk_require_number(ctx, 0);
@@ -525,6 +535,7 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
       { "circle", js_vg_circle, 3 },
       { "ellipse", js_vg_ellipse, 4 },
       { "bezierTo", js_vg_bezierTo, 6 },
+      { "quadTo", js_vg_quadTo, 4 },
       { "roundedRect", js_vg_roundedRect, 5 },
       { "linearGradient", js_vg_linearGradient, 12 },
       { "radialGradient", js_vg_radialGradient, 12 },

@@ -17,6 +17,7 @@ duk_ret_t js_fs_close(duk_context *ctx){
         duk_push_pointer(ctx, NULL);
         duk_put_prop_string(ctx, 0, "_ptr");
     }
+    return 0;
 }
 
 duk_ret_t js_fs_readFile(duk_context* ctx){
@@ -39,7 +40,7 @@ duk_ret_t js_fs_readFile(duk_context* ctx){
 duk_ret_t js_fs_readText(duk_context* ctx){
     const char* path = duk_require_string(ctx, 0);
     size_t size;
-    unsigned char* f = SDL_LoadFile(path, &size);
+    const char* f = SDL_LoadFile(path, &size);
     if(f == NULL) return -1;
     
     duk_push_lstring(ctx, f, size);

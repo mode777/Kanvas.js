@@ -101,14 +101,14 @@ Not much support here yet, as this project just started. Most of it should be fa
 |putImageData|      no|
 |imageSmoothingEnabled|no|
 |imageSmoothingQuality|no|
-|arc|               no|
+|arc|               yes|
 |arcTo|             no|
-|bezierCurveTo|     no|
-|ellipse|           no|
+|bezierCurveTo|     yes|
+|ellipse|           partially (no rotation)|
 |lineTo|            yes|
 |moveTo|            yes|
-|quadraticCurveTo|  no|
-|rect|              no|
+|quadraticCurveTo|  yes|
+|rect|              yes|
 |lineCap|           no|
 |lineDashOffset|    no|
 |lineJoin|          no|

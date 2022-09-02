@@ -26,6 +26,7 @@ import 'core-js/actual/weak-map';
 import 'core-js/actual/weak-set';
 
 import { CanvasRenderingContext2D } from './CanvasRenderingContext2D';
+import { Path2D } from './Path2D';
 
 if (typeof window === 'undefined') {
   (function () {
@@ -129,3 +130,4 @@ function fetch(path: string) {
 }
 
 (<any>window).fetch = fetch;
+(<any>window).Path2D = Path2D;
