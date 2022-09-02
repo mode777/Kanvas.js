@@ -6,7 +6,7 @@ async function main(){
   const parser = new DOMParser();
   const dom = parser.parseFromString(text);
 
-  console.log(dom)
+  //console.log(dom)
 
   const canvas = window["kanvas"] ?? <HTMLCanvasElement>document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
