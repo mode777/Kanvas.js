@@ -1,5 +1,5 @@
 {
-  "name": "canvg-example",
+  "name": "svg-example",
   "version": "1.0.0",
   "description": "",
   "main": "dist/main.bundle.js",
@@ -11,18 +11,22 @@
   "author": "Alexander Klingenbeck",
   "license": "MIT",
   "devDependencies": {
+    "@types/xmldom": "^0.1.31",
     "schema-utils": "^4.0.0",
     "serve": "^12.0.0",
     "ts-loader": "^6.2.0",
-    "typescript": "^3.6.3",
+    "typescript": "^4.8.2",
     "webpack": "^5.38.1",
     "webpack-cli": "^4.7.2"
   },
   "dependencies": {
-    "canvg": "^4.0.1",
     "core-js": "^3.25.0",
+    "raf": "^3.4.1",
     "reflect-metadata": "^0.1.13",
-    "tslib": "^1.10.0",
+    "rgbcolor": "^1.0.1",
+    "stackblur-canvas": "^2.5.0",
+    "svg-pathdata": "^6.0.3",
+    "tslib": "^2.4.0",
     "xmldom": "^0.6.0"
   }
 }

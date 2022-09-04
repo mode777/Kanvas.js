@@ -125,11 +125,33 @@ static duk_ret_t js_vg_translate(duk_context *ctx)
     return 0;
 }
 
+static duk_ret_t js_vg_scale(duk_context *ctx)
+{
+    float x = duk_require_number(ctx, 0);
+    float y = duk_require_number(ctx, 1);
+
+    nvgScale(vg, x, y);
+    return 0;
+}
+
 static duk_ret_t js_vg_rotate(duk_context *ctx)
 {
     float r = duk_require_number(ctx, 0);
 
     nvgRotate(vg, r);
+    return 0;
+}
+
+static duk_ret_t js_vg_transform(duk_context *ctx)
+{
+    float a = duk_require_number(ctx, 0);
+    float b = duk_require_number(ctx, 0);
+    float c = duk_require_number(ctx, 0);
+    float d = duk_require_number(ctx, 0);
+    float e = duk_require_number(ctx, 0);
+    float f = duk_require_number(ctx, 0);
+
+    nvgTransform(vg,a,b,c,d,e,f);
     return 0;
 }
 
@@ -517,6 +539,118 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
     return 0;
 }
 
+typedef enum {
+  noCommand,
+  beginPath,
+  arc,
+  arcTo,
+  bezierCurveTo,
+  closePath,
+  ellipse,
+  lineTo,
+  moveTo,
+  quadraticCurveTo,
+  rect
+} CommandOp;
+
+static duk_ret_t js_vg_applyPath(duk_context *ctx)
+{
+    size_t len;
+    unsigned int* commands = duk_require_buffer_data(ctx,0,&len);
+    float* coordinates = (float*)commands;
+    len /= sizeof(float);
+    size_t i = 0;
+    while(i < len)
+    {
+        switch (commands[i])
+        {
+            case noCommand:
+                goto BREAK;
+            case beginPath:
+                nvgBeginPath(vg);
+                i++;
+                break;
+            case arc:
+                nvgArc(vg, 
+                    coordinates[i+1], 
+                    coordinates[i+2], 
+                    coordinates[i+3], 
+                    coordinates[i+4], 
+                    coordinates[i+5], 
+                    coordinates[i+6]);
+                i+=7;
+                break;
+            case arcTo:
+                nvgArcTo(vg, 
+                    coordinates[i+1], 
+                    coordinates[i+2], 
+                    coordinates[i+3], 
+                    coordinates[i+4], 
+                    coordinates[i+5]);
+                i+=6;
+                break;
+            case bezierCurveTo:
+                nvgBezierTo(vg, 
+                    coordinates[i+1], 
+                    coordinates[i+2], 
+                    coordinates[i+3], 
+                    coordinates[i+4], 
+                    coordinates[i+5],
+                    coordinates[i+6]);
+                i+=7;
+                break;
+            case closePath:
+                nvgClosePath(vg);
+                i++;
+                break;
+            case ellipse:
+                // TODO: Fix ellipse implementation
+                nvgEllipse(vg, 
+                    coordinates[i+1], 
+                    coordinates[i+2], 
+                    coordinates[i+3], 
+                    coordinates[i+4]);
+                i+=9;
+                break;
+            case lineTo:
+                nvgLineTo(vg, 
+                    coordinates[i+1], 
+                    coordinates[i+2]);
+                i+=3;
+                break;
+            case moveTo:
+                nvgMoveTo(vg, 
+                    coordinates[i+1], 
+                    coordinates[i+2]);
+                i+=3;
+                break;
+            case quadraticCurveTo:
+                nvgQuadTo(vg, 
+                    coordinates[i+1], 
+                    coordinates[i+2],
+                    coordinates[i+3],
+                    coordinates[i+4]);
+                i+=5;
+                break;
+            case rect:
+                nvgRect(vg, 
+                    coordinates[i+1], 
+                    coordinates[i+2],
+                    coordinates[i+3],
+                    coordinates[i+4]);
+                i+=5;
+                break;
+            default:
+                printf("Illegal opcode for path, path data corrupted?\n");
+                abort();
+                break;
+        }
+    }
+BREAK: 
+    
+    return 0;
+}
+
 
  static const duk_function_list_entry my_module_funcs[] = {
       { "beginPath", js_vg_beginPath, 0 /* no args */ },
@@ -526,7 +660,9 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
       { "lineCap", js_vg_lineCap, 1 },
       { "lineJoin", js_vg_lineJoin, 1 },
       { "translate", js_vg_translate, 2 },
+      { "scale", js_vg_scale, 2 },
       { "rotate", js_vg_rotate, 1 },
+      { "transform", js_vg_transform, 6 },
       { "fillColor", js_vg_fillColor, 4 },
       { "fill", js_vg_fill, 0 },
       { "scissor", js_vg_scissor, 4 },
@@ -563,6 +699,7 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
       { "resetScissor", js_vg_resetScissor, 0 },
       { "resetTransform", js_vg_resetTransform, 0 },
       { "clear", js_vg_clear, 0 },
+      { "applyPath", js_vg_applyPath, 1 },
       { NULL, NULL, 0 }
   };
 
@@ -642,7 +779,6 @@ void kvs_on_render(KVS_Context* ctx)
         {
             kvs_print_error(ctx, KVS_RUNTIME);
         }
-
         nvgEndFrame(vg);
         
         SDL_Window* win = SDL_GL_GetCurrentWindow();

@@ -131,3 +131,4 @@ function fetch(path: string) {
 
 (<any>window).fetch = fetch;
 (<any>window).Path2D = Path2D;
+

@@ -87,6 +87,7 @@ async function test() {
 
 
 (async function main() {
+  throw new Error("Async error")
   console.log(Event)
   ink_main()
 
@@ -130,4 +131,11 @@ async function test() {
   const ev = new CustomEvent("ink_choice", { detail: "xxx" })
   console.log("redy!")
   dispatchEvent(ev)
-})();
+})().catch(x => {
+  for (const key in x) {
+    if (Object.prototype.hasOwnProperty.call(x, key)) {
+      const element = x[key];
+      
+    }
+  }
+});

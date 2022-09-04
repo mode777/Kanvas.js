@@ -28,7 +28,7 @@ module.exports = {
     extensions: [".tsx", ".ts", ".js"],
   },
   output: {
-    filename: './../../example_canvg.js',
+    filename: './../../example_svg.js',
     path: __dirname,
     chunkFormat: 'commonjs'
   }

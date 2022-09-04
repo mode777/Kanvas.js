@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   while(!quit){
     Uint32 t = SDL_GetTicks();
     update();
-    t = 15-(t-SDL_GetTicks());
+    t = 14-(t-SDL_GetTicks());
     if(t > 0) SDL_Delay(t);
   }
 
