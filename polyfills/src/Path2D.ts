@@ -108,18 +108,24 @@ export class Path2D {
   private parse(path: string) {
     type Vector2 = [number, number];
     let numBuffer = "";
+    let lastPoint: Vector2 = [0, 0];
     let currentPoint: Vector2 = [0, 0];
     let currentCommand = "";
     let prevCommand = "";
+    //let isFollow = false;
     const coordinates: number[] = [];
     let control1: Vector2 = [0, 0];
     let control2: Vector2 = [0, 0];
 
     const flushNum = () => {
-      if (numBuffer.length == 0)
+      if (numBuffer.length == 0) {
         return;
-
-      coordinates.push(parseFloat(numBuffer));
+      }
+      const f = parseFloat(numBuffer);
+      if(isNaN(f)){
+        throw new Error("Cannot parse " + numBuffer)
+      }
+      coordinates.push(f);
       numBuffer = "";
     };
 
@@ -130,97 +136,108 @@ export class Path2D {
     const flushCommand = () => {
       switch (currentCommand) {
         case 'M':
-          currentPoint = [coordinates.shift(), coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.moveTo, ...currentPoint);
+          lastPoint = [coordinates.shift(), coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.moveTo, ...lastPoint);
           currentCommand = 'L';
           break;
         case 'm':
-          currentPoint = [currentPoint[0] + coordinates.shift(), currentPoint[1] + coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.moveTo, ...currentPoint);
+          lastPoint = [lastPoint[0] + coordinates.shift(), lastPoint[1] + coordinates.shift()];
+          //console.log(`m ${lastPoint[0]},${lastPoint[1]}`);
+          if(prevCommand === '') currentPoint = [...lastPoint]
+          this.buffer.pushCommand(CommandOp.moveTo, ...lastPoint);
           currentCommand = 'l';
           break;
         case 'L':
-          currentPoint = [coordinates.shift(), coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.lineTo, ...currentPoint);
+          lastPoint = [coordinates.shift(), coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.lineTo, ...lastPoint);
           break;
         case 'l':
-          currentPoint = [currentPoint[0] + coordinates.shift(), currentPoint[1] + coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.lineTo, ...currentPoint);
+          lastPoint = [lastPoint[0] + coordinates.shift(), lastPoint[1] + coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.lineTo, ...lastPoint);
           break;
         case 'H':
-          currentPoint = [coordinates.shift(), currentPoint[1]];
-          this.buffer.pushCommand(CommandOp.lineTo, ...currentPoint);
+          lastPoint = [coordinates.shift(), lastPoint[1]];
+          this.buffer.pushCommand(CommandOp.lineTo, ...lastPoint);
           break;
         case 'h':
-          currentPoint = [currentPoint[0] + coordinates.shift(), currentPoint[1]];
-          this.buffer.pushCommand(CommandOp.lineTo, ...currentPoint);
+          lastPoint = [lastPoint[0] + coordinates.shift(), lastPoint[1]];
+          this.buffer.pushCommand(CommandOp.lineTo, ...lastPoint);
           break;
         case 'V':
-          currentPoint = [currentPoint[0], coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.lineTo, ...currentPoint);
+          lastPoint = [lastPoint[0], coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.lineTo, ...lastPoint);
           break;
         case 'v':
-          currentPoint = [currentPoint[0], currentPoint[1] + coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.lineTo, ...currentPoint);
+          lastPoint = [lastPoint[0], lastPoint[1] + coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.lineTo, ...lastPoint);
           break;
         case 'C':
           control1 = [coordinates.shift(), coordinates.shift()];
           control2 = [coordinates.shift(), coordinates.shift()];
-          currentPoint = [coordinates.shift(), coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.bezierCurveTo, ...control1, ...control2, ...currentPoint);
+          lastPoint = [coordinates.shift(), coordinates.shift()];
+          //console.log("C ", " c1 ", ...control1, " c2 ", ...control2, " p ", ...lastPoint)
+          this.buffer.pushCommand(CommandOp.bezierCurveTo, ...control1, ...control2, ...lastPoint);
           break;
         case 'c':
-          control1 = [currentPoint[0] + coordinates.shift(), currentPoint[1] + coordinates.shift()];
-          control2 = [currentPoint[0] + coordinates.shift(), currentPoint[1] + coordinates.shift()];
-          currentPoint = [currentPoint[0] + coordinates.shift(), currentPoint[1] + coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.bezierCurveTo, ...control1, ...control2, ...currentPoint);
+          control1 = [lastPoint[0] + coordinates.shift(), lastPoint[1] + coordinates.shift()];
+          control2 = [lastPoint[0] + coordinates.shift(), lastPoint[1] + coordinates.shift()];
+          lastPoint = [lastPoint[0] + coordinates.shift(), lastPoint[1] + coordinates.shift()];
+          //console.log("c ", " c1 ", ...control1, " c2 ", ...control2, " p ", ...lastPoint)
+          this.buffer.pushCommand(CommandOp.bezierCurveTo, ...control1, ...control2, ...lastPoint);
           break;
         case 'S':
-          control1 = prevCommand == 's' || prevCommand == 'S' ? projectPoint(control2, currentPoint) : [...currentPoint];
+          control1 = prevCommand == 's' || prevCommand == 'S' ? projectPoint(control2, lastPoint) : [...lastPoint];
           control2 = [coordinates.shift(), coordinates.shift()];
-          currentPoint = [coordinates.shift(), coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.bezierCurveTo, ...control1, ...control2, ...currentPoint);
+          lastPoint = [coordinates.shift(), coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.bezierCurveTo, ...control1, ...control2, ...lastPoint);
           break;
         case 's':
-          control1 = prevCommand == 's' || prevCommand == 'S' ? projectPoint(control2, currentPoint) : [...currentPoint];
-          control2 = [currentPoint[0] + coordinates.shift(), currentPoint[1] + coordinates.shift()];
-          currentPoint = [currentPoint[0] + coordinates.shift(), currentPoint[1] + coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.bezierCurveTo, ...control1, ...control2, ...currentPoint);
+          control1 = prevCommand == 's' || prevCommand == 'S' ? projectPoint(control2, lastPoint) : [...lastPoint];
+          control2 = [lastPoint[0] + coordinates.shift(), lastPoint[1] + coordinates.shift()];
+          lastPoint = [lastPoint[0] + coordinates.shift(), lastPoint[1] + coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.bezierCurveTo, ...control1, ...control2, ...lastPoint);
           break;
         case 'Q':
           control1 = [coordinates.shift(), coordinates.shift()];
-          currentPoint = [coordinates.shift(), coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.quadraticCurveTo, ...control1, ...currentPoint);
+          lastPoint = [coordinates.shift(), coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.quadraticCurveTo, ...control1, ...lastPoint);
           break;
         case 'q':
-          control1 = [currentPoint[0] + coordinates.shift(), currentPoint[1] + coordinates.shift()];
-          currentPoint = [currentPoint[0] + coordinates.shift(), currentPoint[1] + coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.quadraticCurveTo, ...control1, ...currentPoint);
+          control1 = [lastPoint[0] + coordinates.shift(), lastPoint[1] + coordinates.shift()];
+          lastPoint = [lastPoint[0] + coordinates.shift(), lastPoint[1] + coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.quadraticCurveTo, ...control1, ...lastPoint);
           break;
         case 'T':
-          control1 = prevCommand == 't' || prevCommand == 'T' ? projectPoint(control1, currentPoint) : [...currentPoint];
-          currentPoint = [coordinates.shift(), coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.quadraticCurveTo, ...control1, ...currentPoint);
+          control1 = prevCommand == 't' || prevCommand == 'T' ? projectPoint(control1, lastPoint) : [...lastPoint];
+          lastPoint = [coordinates.shift(), coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.quadraticCurveTo, ...control1, ...lastPoint);
           break;
         case 't':
-          control1 = prevCommand == 't' || prevCommand == 'T' ? projectPoint(control1, currentPoint) : [...currentPoint];
-          currentPoint = [currentPoint[0] + coordinates.shift(), currentPoint[1] + coordinates.shift()];
-          this.buffer.pushCommand(CommandOp.quadraticCurveTo, ...control1, ...currentPoint);
+          control1 = prevCommand == 't' || prevCommand == 'T' ? projectPoint(control1, lastPoint) : [...lastPoint];
+          lastPoint = [lastPoint[0] + coordinates.shift(), lastPoint[1] + coordinates.shift()];
+          this.buffer.pushCommand(CommandOp.quadraticCurveTo, ...control1, ...lastPoint);
           break;
         case 'A':
         case 'a':
           throw new Error('Method not implemented.');
         case 'Z':
         case 'z':
+          numBuffer = ""
+          //isFollow = false
           this.buffer.pushCommand(CommandOp.closePath);
-          break;
+          return;
         default:
           return;
       }
       if (coordinates.length > 0) {
+        //isFollow = true
         flushCommand();
+      } else {
+        currentPoint = [...lastPoint]
+        //isFollow = false
       }
     };
+
     for (const c of path) {
       switch (c) {
         case 'M':
@@ -249,6 +266,7 @@ export class Path2D {
           currentCommand = c;
           break;
         case ',':
+        case ' ':
           flushNum();
           break;
         case '-':

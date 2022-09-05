@@ -429,10 +429,20 @@ static duk_ret_t js_vg_clear(duk_context *ctx){
 
 static duk_ret_t js_vg_createImage(duk_context *ctx)
 {
-    const char *filename = duk_safe_to_string(ctx, 0);
-    duk_uint_t flag = duk_require_uint(ctx, 1);
+    int id;
+    if(duk_is_string(ctx,0)){
+        const char *filename = duk_safe_to_string(ctx, 0);
+        duk_uint_t flag = duk_require_uint(ctx, 1);
 
-    int id = nvgCreateImage(vg, filename, flag);
+        id = nvgCreateImage(vg, filename, flag);
+    } else {
+        size_t len;
+        unsigned char* mem = duk_require_buffer_data(ctx, 0, &len);
+        
+        duk_uint_t flag = duk_require_uint(ctx, 1);
+
+        id = nvgCreateImageMem(vg, flag, mem, len);
+    }
 
     duk_push_uint(ctx, id);
 
@@ -568,6 +578,7 @@ static duk_ret_t js_vg_applyPath(duk_context *ctx)
                 goto BREAK;
             case beginPath:
                 nvgBeginPath(vg);
+                //nvgPathWinding(vg, NVG_HOLE);
                 i++;
                 break;
             case arc:
@@ -601,6 +612,7 @@ static duk_ret_t js_vg_applyPath(duk_context *ctx)
                 break;
             case closePath:
                 nvgClosePath(vg);
+                nvgPathWinding(vg, NVG_HOLE);
                 i++;
                 break;
             case ellipse:
@@ -775,6 +787,7 @@ void kvs_on_render(KVS_Context* ctx)
         SDL_GetWindowSize(ctx->window, &ww,&wh);
         glViewport(0,0,rw,rh);
         nvgBeginFrame(vg, ctx->config.width, ctx->config.height, ctx->config.retina ? rw/ww : 1);
+        
         if (duk_pcall(vm, 1) != 0)
         {
             kvs_print_error(ctx, KVS_RUNTIME);

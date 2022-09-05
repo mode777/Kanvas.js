@@ -14,11 +14,17 @@ export class CanvasRenderingContext2D {
   }
   globalAlpha: number;
   globalCompositeOperation: any;
+
   drawImage(image: CanvasImageSource, dx: number, dy: number): void;
   drawImage(image: CanvasImageSource, dx: number, dy: number, dw: number, dh: number): void;
   drawImage(image: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
   drawImage(image: unknown, sx: unknown, sy: unknown, sw?: unknown, sh?: unknown, dx?: unknown, dy?: unknown, dw?: unknown, dh?: unknown): void {
-    throw new Error('drawImage not implemented.');
+    const img = image as ImageBitmap; 
+    // todo: implement other overloads
+    vg.beginPath();
+    vg.rect(arguments[1],arguments[2],arguments[3] ?? img.width,arguments[4] ?? img.height);
+    vg.imagePattern(arguments[1],arguments[2],arguments[3] ?? img.width,arguments[4] ?? img.height, 0, (<any>img).id, 1);
+    vg.fill();
   }
   beginPath(): void {
     vg.beginPath()

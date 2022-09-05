@@ -17,6 +17,9 @@ interface KSvgGElement extends KSvgContainer {
 
 interface KSvgPath extends KSvgElement {
   d: Path2D
+  fill: string,
+  stroke: string,
+  lineWidth: number
 }
 
 export class KSvgImage {
@@ -75,8 +78,8 @@ export class KSvgImage {
 
     return {
       type: element.nodeName,
-      lineWidth: !isNaN(lineWidth) ? lineWidth : 1,
-      stroke: stroke != "" ? stroke : null,
+      lineWidth: !isNaN(lineWidth) ? lineWidth : null,
+      stroke: (stroke != "" && stroke !== 'none') ? stroke : null,
       fill: fill != "" ? fill : null,
       children: this.parseChildren(element),
       render: this.renderG
@@ -84,26 +87,50 @@ export class KSvgImage {
   }
 
   private renderPath(ctx: CanvasRenderingContext2D, el: KSvgPath) {
-    if (this.fill && this.stroke) {
-      ctx.fillStyle = this.fill;
-      ctx.strokeStyle = this.stroke;
-      ctx.lineWidth = this.lineWidth ?? 1;
+    //ctx.fillStyle = "#000"
+    //ctx.fill(el.d)
+    const fill = el.fill ?? this.fill;
+    const stroke = el.stroke ?? this.stroke;
+    const lineWidth = el.lineWidth ?? this.lineWidth ?? 1;
+
+    //console.log(fill, stroke)
+
+    if (fill && stroke) {
+      ctx.fillStyle = fill;
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = lineWidth;
       ctx.fill(el.d);
       ctx.stroke(el.d);
-    } else if (this.fill) {
-      ctx.fillStyle = this.fill;
+    } else if (fill) {
+      ctx.fillStyle = fill;
       ctx.fill(el.d);
-    } else if (this.stroke) {
-      ctx.strokeStyle = this.stroke;
-      ctx.lineWidth = this.lineWidth ?? 1;
+    } else if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = lineWidth;
       ctx.stroke(el.d);
     }
   }
 
+  private parseStyle(style: string){
+    if(!style || style === '') return {}
+    return style.split(';').reduce((p,c,i) => {
+      const kv = c.split(':')
+      if(kv[1] !== 'none') p[kv[0]] = kv[1]
+      return p;
+    }, {})
+  }
+
   private parsePath(element: SVGPathElement) {
+    const style = this.parseStyle(element.getAttribute("style"))
+    const lineWidth = parseFloat(style["stroke-width"]);
+    
+    const p = new Path2D(element.getAttribute("d"));
     return {
+      lineWidth: !isNaN(lineWidth) ? lineWidth : null,
+      stroke: style["stroke"],
+      fill: style["fill"],
       type: element.nodeName,
-      d: new Path2D(element.getAttribute("d")),
+      d: p,
       render: this.renderPath
     };
   }

@@ -115,6 +115,28 @@ class CustomEvent<T = any> extends Event {
 (<any>window).Event = Event;
 (<any>window).CustomEvent = CustomEvent;
 
+class Blob {
+  constructor(private readonly buffer: ArrayBuffer){
+
+  }
+  get size() { return this.buffer.byteLength } 
+  get type() { return '' }
+  arrayBuffer() {
+    return Promise.resolve(this.buffer);
+  }
+  slice(start?: number, end?: number, contentType?: string): Blob {
+    throw new Error("Blob.slice not implemented")
+  }
+  stream() {
+    throw new Error("Blob.stream not implemented")
+  }
+  text() {
+    throw new Error("Blob.text not implemented")
+  }
+}
+
+(<any>window).Blob = Blob;
+
 class Response {
   constructor(public readonly path: string) { }
   arrayBuffer() {
@@ -123,7 +145,32 @@ class Response {
   text() {
     return Promise.resolve(fs.readText(this.path))
   }
+  blob() {
+    return Promise.resolve(new Blob(fs.readFile(this.path)))
+  }
 }
+
+class ImageBitmap {
+  private readonly size: any
+  constructor(public readonly id: number){
+    this.size = vg.imageSize(id)
+  }
+  get width() { return this.size.width }
+  get height() { return this.size.height }
+  close(){
+    vg.deleteImage(this.id)
+  }
+}
+
+async function createImageBitmap(blob: Blob){
+  const arr = await blob.arrayBuffer();
+  const id = vg.createImage(arr,0);
+  if(id === 0){
+    throw new Error("Unable to decode image");
+  }
+  return new ImageBitmap(id);
+}
+(<any>window).createImageBitmap = createImageBitmap;
 
 function fetch(path: string) {
   return Promise.resolve(new Response(path))
