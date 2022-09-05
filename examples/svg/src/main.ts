@@ -23,7 +23,7 @@ async function main(){
     ctx.fillRect(0,0,canvas.width, canvas.height);
 
     ctx.drawImage(bg,0,0,canvas.width,canvas.height);
-    ctx.drawImage(person,30,100,person.width*0.3,person.height*0.3);
+    ctx.drawImage(person,30,50,person.width*0.4,person.height*0.4);
     
     ctx.translate(canvas.width/2-100,canvas.height/2-100)
     ctx.scale(1.5+Math.sin(t/1000),1.5+Math.sin(t/1000))
