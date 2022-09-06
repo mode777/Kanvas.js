@@ -398,7 +398,7 @@ static duk_ret_t js_vg_textBounds(duk_context *ctx)
     const char *text = duk_safe_to_string(ctx, 2);
 
     float tw = nvgTextBounds(vg, x, y, text, NULL, NULL);
-
+    
     duk_push_number(ctx, (double)tw);
 
     return 1;

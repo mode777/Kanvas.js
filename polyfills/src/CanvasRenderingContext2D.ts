@@ -73,7 +73,7 @@ export class CanvasRenderingContext2D {
   public get fillStyle() {
     return this._fillStyle
   }
-  private _strokeStyle: string | CanvasGradient | CanvasPattern;
+  private _strokeStyle: string | CanvasGradient | CanvasPattern = '#000';
   public get strokeStyle(): string | CanvasGradient | CanvasPattern {
     return this._strokeStyle;
   }
@@ -156,7 +156,11 @@ export class CanvasRenderingContext2D {
     vg.fill();
   }
   strokeRect(x: number, y: number, w: number, h: number): void {
-    throw new Error('strokeRect not implemented.');
+    vg.beginPath();
+    vg.rect(x,y,w,h);
+    vg.strokeWidth(this.lineWidth);
+    vg.strokeColor(this.strokeStyle)
+    vg.stroke()
   }
   shadowBlur = 0;
   shadowColor = "#00000000";
@@ -170,9 +174,8 @@ export class CanvasRenderingContext2D {
   }
 
   fillText(text: string, x: number, y: number, maxWidth?: number): void {
-    const face = `${this._fontFace}${this._fontBold ? ':bold' : ''}${this._fontItalic ? ':italic' : ''}`
-    this.checkFace(face);
-    vg.fontFace(face)
+    this.checkFace(this._fontFace);
+    vg.fontFace(this._fontFace)
     vg.fontSize(this._fontSize)
     if(this.shadowBlur != 0){
       vg.fontBlur(this.shadowBlur)
@@ -209,7 +212,13 @@ export class CanvasRenderingContext2D {
     }
   }
   measureText(text: string): TextMetrics {
-    throw new Error('measureText not implemented.');
+    this.checkFace(this._fontFace);
+    vg.fontFace(this._fontFace)
+    vg.fontSize(this._fontSize)
+    const w = vg.textBounds(0,0,text);
+    //console.log(text + " " + w);
+    
+    return <any>{ width: w }
   }
   strokeText(text: string, x: number, y: number, maxWidth?: number): void {
     throw new Error('strokeText not implemented.');
@@ -219,10 +228,13 @@ export class CanvasRenderingContext2D {
   _fontSize = 12
   _fontBold = false
   _fontItalic = false
+  _font = "12px sans-serif"
   get font() {
-    return `${ this._fontItalic ? 'italic ' : '' }${this._fontBold ? 'bold ' : '' }${this._fontSize}px ${this._fontFace}`
+    return this._font
   }
   set font(v){
+    if(v === this._font) return;
+    this._font = v
     var f = v.split(' ')
     if(f.length == 2){
       this._fontSize = parseInt(f[0])
@@ -238,6 +250,7 @@ export class CanvasRenderingContext2D {
       this._fontSize = parseInt(f[2])
       this._fontFace = f[3]
     }
+    this._fontFace = `${this._fontFace}${this._fontBold ? ':bold' : ''}${this._fontItalic ? ':italic' : ''}`
   }
   textAlign: CanvasTextAlign;
   textBaseline: CanvasTextBaseline;
