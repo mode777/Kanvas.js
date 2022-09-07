@@ -174,9 +174,7 @@ export class CanvasRenderingContext2D {
   }
 
   fillText(text: string, x: number, y: number, maxWidth?: number): void {
-    this.checkFace(this._fontFace);
-    vg.fontFace(this._fontFace)
-    vg.fontSize(this._fontSize)
+    this.setTextProps()
     if(this.shadowBlur != 0){
       vg.fontBlur(this.shadowBlur)
       vg.fillColor(this.shadowColor)
@@ -211,10 +209,14 @@ export class CanvasRenderingContext2D {
       this.loaded[str] = true
     }
   }
-  measureText(text: string): TextMetrics {
+  private setTextProps(){
     this.checkFace(this._fontFace);
     vg.fontFace(this._fontFace)
     vg.fontSize(this._fontSize)
+    vg.textAlign(this._valign | this._halign)
+  }
+  measureText(text: string): TextMetrics {
+    this.setTextProps()
     const w = vg.textBounds(0,0,text);
     //console.log(text + " " + w);
     
@@ -253,7 +255,30 @@ export class CanvasRenderingContext2D {
     this._fontFace = `${this._fontFace}${this._fontBold ? ':bold' : ''}${this._fontItalic ? ':italic' : ''}`
   }
   textAlign: CanvasTextAlign;
-  textBaseline: CanvasTextBaseline;
+  private _textBaseline: CanvasTextBaseline;
+  private _halign: number = vg.ALIGN_LEFT
+  private _valign: number = vg.ALIGN_BASELINE
+  public get textBaseline(): CanvasTextBaseline {
+    return this._textBaseline;
+  }
+  public set textBaseline(value: CanvasTextBaseline) {
+    this._textBaseline = value;
+    switch (value) {
+      case "bottom":
+        this._valign = vg.ALIGN_BOTTOM
+        break;
+        case "middle":
+        this._valign = vg.ALIGN_MIDDLE
+        break;
+        case "top":
+        this._valign = vg.ALIGN_TOP
+        break;
+      case "alphabetic":
+      default:
+        this._valign = vg.ALIGN_BASELINE
+        break;
+    }
+  }
   getTransform(): DOMMatrix {
     throw new Error('getTransform not implemented.');
   }

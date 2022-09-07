@@ -104,6 +104,10 @@ export class Element {
     constructor(public x: number, public y: number, public w: number, public h: number){
 
     }
+
+    update(fw: Framework){
+        
+    }
 }
 
 export interface TextStyle {
@@ -142,6 +146,7 @@ export class TextElement extends Element {
         ctx.fillStyle = this.style.color
         ctx.shadowBlur = this.style.shadowBlur
         ctx.shadowColor = this.style.shadowColor
+        ctx.textBaseline = 'top'
         
         if(this.h == 0){
             this.lines = this.getLines(ctx, this.text, this.w);

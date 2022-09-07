@@ -10,6 +10,58 @@ export class EventHandler<T> {
     }
 }
 
+
+export interface NodeLike {
+    attached?()
+    update?()
+    ready?()
+    input?()
+    unhandledInput?()
+
+}
+
+
+export interface NodeProperties {
+    enabled: boolean
+}
+
+export class Node {
+    public readonly children = []
+    private readonly lookup: {[key: string]: Node } = {}
+    private enabled: boolean
+    private root: Node;
+    
+    constructor(public readonly id: string, public parent: Node = null, properties: Partial<NodeProperties> = {}){
+        Object.getPrototypeOf(this).properties.forEach(key => {
+            this[key] = properties[key]
+        });
+        parent?.addChild(this);
+    }
+
+    private getRoot(){
+        return this.parent?.getRoot() ?? this
+    }
+
+    private addChild(c: Node){
+        this.children.push(c)
+        this.lookup[c.id] = c
+        c.root = this.getRoot();
+    }
+
+    getNodeArr(pathFrags: string[]) : Node {
+        if(pathFrags.length === 0) return this;
+        const id = pathFrags.shift()
+        if(id === '..') return this.parent?.getNodeArr(pathFrags)
+        else if(id === '.') return this.getNodeArr(pathFrags)
+        else  return this.lookup[id]?.getNodeArr(pathFrags)
+    }
+
+    getNode<T extends Node>(path: string){
+        if(path[0] === '/') return <T>this.root.getNode(path.substring(1));
+        else return <T>this.getNodeArr(path.split('/'));
+    }
+}
+
 export class Framework {
 
     public readonly context: CanvasRenderingContext2D;
