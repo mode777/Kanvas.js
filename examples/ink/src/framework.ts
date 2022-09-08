@@ -1,135 +1,132 @@
 export class EventHandler<T> {
-    handlers: ((e: T)=>void)[] = []
+    handlers: ((e: T) => void)[] = []
     subscribe(cb: (ctx: T) => void) {
         this.handlers.push(cb)
     }
-    dispatch(e :T){
+    dispatch(e: T) {
         for (const cb of this.handlers) {
             cb(e)
         }
     }
 }
 
-
-export interface NodeLike {
-    attached?()
-    update?()
-    ready?()
-    input?()
-    unhandledInput?()
-
-}
-
-
-export interface NodeProperties {
-    enabled: boolean
-}
-
-export class Node {
-    public readonly children = []
-    private readonly lookup: {[key: string]: Node } = {}
-    private enabled: boolean
-    private root: Node;
-    
-    constructor(public readonly id: string, public parent: Node = null, properties: Partial<NodeProperties> = {}){
-        Object.getPrototypeOf(this).properties.forEach(key => {
-            this[key] = properties[key]
-        });
-        parent?.addChild(this);
-    }
-
-    private getRoot(){
-        return this.parent?.getRoot() ?? this
-    }
-
-    private addChild(c: Node){
-        this.children.push(c)
-        this.lookup[c.id] = c
-        c.root = this.getRoot();
-    }
-
-    getNodeArr(pathFrags: string[]) : Node {
-        if(pathFrags.length === 0) return this;
-        const id = pathFrags.shift()
-        if(id === '..') return this.parent?.getNodeArr(pathFrags)
-        else if(id === '.') return this.getNodeArr(pathFrags)
-        else  return this.lookup[id]?.getNodeArr(pathFrags)
-    }
-
-    getNode<T extends Node>(path: string){
-        if(path[0] === '/') return <T>this.root.getNode(path.substring(1));
-        else return <T>this.getNodeArr(path.split('/'));
-    }
-}
-
-export class Framework {
-
+export class KvsFramework {
+    public onRender = new EventHandler<CanvasRenderingContext2D>();
+    public onUpdate = new EventHandler<void>();
     public readonly context: CanvasRenderingContext2D;
-    public readonly renderer: Renderer
-    public readonly mouse: Mouse
-    public time: number
-    public width: number
-    public height: number
+    public readonly mouse: KvsMouse
+    public readonly screen: KvsScreen
+    public readonly time: KvsTime
 
-    constructor(private canvas: HTMLCanvasElement){
+    constructor(private canvas: HTMLCanvasElement) {
         this.context = canvas.getContext('2d');
-        this.renderer = new Renderer(this);
-        this.mouse = new Mouse(canvas);
+        this.screen = new KvsScreen(canvas.width,canvas.height);
+        this.mouse = new KvsMouse(canvas);
+        this.time = new KvsTime(0);
         const af = (time) => {
-            this.time = time
+            this.time.update(time)
             this.loop();
             requestAnimationFrame(af)
         }
         requestAnimationFrame(af);
     }
 
-    async waitKey(keys?: string[]) {
-        var ev = await this.waitForEvent<KeyboardEvent>("keydown", window, ev => !keys || keys.findIndex(x => x === ev.key) != -1)
-        return ev.key;
-    }
-
-    waitForEvent<T extends Event>(name: string, target: EventTarget = window, predicate?: (ev: T) => boolean) {
-        return new Promise<T>((res, rej) => {
-            const handler = (ev) => {
-                if (!predicate || predicate(ev)) {
-                    res(ev);
-                    removeEventListener(name, handler)
-                }
-            }
-            addEventListener(name, handler);
-        })
-    }
-
-    private loop(){
-        this.width = this.canvas.width
-        this.height = this.canvas.height
-        this.renderer.render();
+    private loop() {
+        this.screen.width = this.canvas.width
+        this.screen.height = this.canvas.height
+        this.onUpdate.dispatch()
+        this.context.clearRect(0, 0, this.screen.width, this.screen.height)
+        this.onRender.dispatch(this.context)
+        this.context.resetTransform()
     }
 }
 
-class Mouse {
-    constructor(canvas: HTMLCanvasElement) {
-      canvas.addEventListener("mousemove", (ev) => { this.x = ev.offsetX; this.y = ev.offsetY });
-      canvas.addEventListener("mouseup", (ev) => this.buttons[ev.button] = false);
-      canvas.addEventListener("mousedown", (ev) => this.buttons[ev.button] = true);
+interface Timer {
+    targetTime?: number,
+    targetCondition?: () => boolean
+    callback: Function
+} 
+
+class KvsTime {
+    private timers: Timer[] = []
+    
+    constructor(public elapsed: number){}
+
+    async wait(t: number){
+        return new Promise<void>((res) => {
+            this.timers.push({ targetTime: this.elapsed+t, callback: res})
+        })
+    }
+
+    async waitFor(predicate: () => boolean){
+        return new Promise<void>((res) => {
+            this.timers.push({ targetCondition: predicate, callback: res})
+        })
+    }
+
+    update(t){
+        this.elapsed = t
+        for (let i = this.timers.length-1; i >= 0; i--) {
+            const t = this.timers[i];            
+            if((t.targetTime && t.targetTime <= this.elapsed) || 
+                t.targetCondition && t.targetCondition()){
+                t.callback()
+                this.timers.splice(i,1);
+            }
+        }
+    }
+}
+
+class KvsMouse {
+    constructor(private canvas: HTMLCanvasElement) {
+        canvas.addEventListener("mousemove", (ev) => { this.x = ev.offsetX; this.y = ev.offsetY });
+        canvas.addEventListener("mouseup", (ev) => this.buttons[ev.button] = false);
+        canvas.addEventListener("mousedown", (ev) => this.buttons[ev.button] = true);
     }
     public x = 0;
     public y = 0;
     public buttons = [false, false, false]
-  }
 
-class Renderer {
-
-    public onRender = new EventHandler<CanvasRenderingContext2D>();
-    
-
-    constructor(private fw: Framework){
-        
-    }
-
-    public render(){
-        this.fw.context.clearRect(0,0,this.fw.width,this.fw.height)
-        this.onRender.dispatch(this.fw.context)
-        this.fw.context.resetTransform()
+    waitClick(){
+        return waitForEvent('click', this.canvas)
     }
 }
+
+class KvsScreen {
+    constructor(public width: number, public height: number){}
+}
+
+let framework: KvsFramework
+
+export let Mouse: KvsMouse
+export let Screen: KvsScreen
+export let Time: KvsTime
+
+export function KvsInit(canvas: HTMLCanvasElement) {
+    framework = new KvsFramework(canvas);
+    Mouse = framework.mouse
+    Time = framework.time
+    Screen = framework.screen
+}
+
+export function onRender(fn: (ctx: CanvasRenderingContext2D) => void){
+    framework.onRender.subscribe(fn);
+}
+
+export function waitForEvent<T extends Event>(name: string, target: EventTarget = window, predicate?: (ev: T) => boolean) {
+    return new Promise<T>((res, rej) => {
+        const handler = (ev) => {
+            if (!predicate || predicate(ev)) {
+                res(ev);
+                removeEventListener(name, handler)
+            }
+        }
+        addEventListener(name, handler);
+    })
+}
+
+export async function waitKey(keys?: string[]) {
+    var ev = await waitForEvent<KeyboardEvent>("keydown", window, ev => !keys || keys.findIndex(x => x === ev.key) != -1)
+    return ev.key;
+}
+

@@ -1,9 +1,52 @@
-import contents from './../ink/test2.ink';
-import { InkApp, TextElement } from './ink-app';
+import compiledStory from './../ink/test2.ink';
+import { KvsInit, Mouse, onRender, Time } from './framework'
+import { Node } from './scene-graph'
+import { InkStory, Panel, TextElement } from './ink-app'
 
-const canvas = window["kanvas"] ?? <HTMLCanvasElement>document.getElementById("canvas")
-var ctx = canvas.getContext('2d');
+const canvas = window['kanvas'] ?? <HTMLCanvasElement>document.getElementById('canvas')
 
-const ink = new InkApp(canvas, contents);
+KvsInit(canvas);
 
-ink.runStory().catch(x => console.log(x))
+class Game extends Node {
+  
+  text: TextElement;
+  paragraphs: string[] = []
+
+  init(){
+    const ink = this.getNode<InkStory>('ink')
+    ink.connect('story', this, this.onStory);
+
+    this.text = this.getNode<TextElement>('text')
+  
+    ink.run().catch(e => console.log(e.stack))
+    this.run().catch(e => console.log(e.stack))
+  }
+  onStory(str){
+    this.paragraphs.push(str)
+  }
+
+  async run(){
+      while(true){
+        await Time.waitFor(() => this.paragraphs.length > 0)
+        this.text.text = this.paragraphs.shift();
+        await Mouse.waitClick();
+      }
+  }
+}
+
+const root = new Game('root');
+const ink = new InkStory('ink', root, { json: compiledStory });
+const bg = new Panel('panel', root, { color: '#fff', w: canvas.width, h: canvas.height });
+const text = new TextElement('text', root, {
+  x: '10%',
+  y: '10vw',
+  w: '80%',
+  fontSize: '5%',
+  fontFace: 'serif',
+  fontStyle: 'italic',
+  align: 'center',
+  color: '#000'
+});
+
+root.iterate(x => x['init']?.call(x));
+onRender(ctx => root.iterate(x => x['draw']?.call(x, ctx)));
