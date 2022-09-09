@@ -50,6 +50,8 @@ static int mouse_x, mouse_y;
 void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
     duk_context* vm = ctx->vm;
     duk_require_stack(vm, 3);
+    int w,h;
+
     if(kvs_push_callback(vm, "dispatchEvent")){
         switch (event->type)
         {
@@ -105,6 +107,23 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 KVS_STRING_PROP("key", kvs_get_key(event->key.keysym.sym));
                 KVS_CALLBACK();
                 break;
+            case SDL_WINDOWEVENT:
+                switch (event->window.event)
+                {
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    
+                    SDL_GetWindowSize(ctx->window, &w, &h);
+                    duk_push_global_object(vm);
+                    duk_get_prop_string(vm, -1, "kanvas");
+                    duk_push_int(vm, w);
+                    duk_put_prop_string(vm, -2, "width");
+                    duk_push_int(vm, h);
+                    duk_put_prop_string(vm, -2, "height");
+                    duk_pop_2(vm);
+                    break;
+                default:
+                    break;
+                }
             default:
                 break;
         }

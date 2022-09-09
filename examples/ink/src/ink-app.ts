@@ -214,7 +214,7 @@ const defaultStyle: Partial<TextStyle> = {
 }
 export class TextElement extends Control implements TextStyle {
     private lines: Line[];
-    private font: string;
+    private get font() { return `${this.fontStyle} ${this.fontSizeUnit.pixels}px ${this.fontFace}` };
     fontFace: string;
     private fontSizeUnit: Unit;
     public get fontSize(): Size {return this.fontSizeUnit.toSize();}
@@ -239,7 +239,6 @@ export class TextElement extends Control implements TextStyle {
     constructor(id: string, parent: Node, props: Partial<TextStyle> = defaultStyle){
         super(id, parent, { ...defaultStyle, ...props });
         this.lineHeight = this.lineHeightUnit.pixels === 0 ? this.fontSize : this.lineHeight
-        this.font = `${this.fontStyle} ${this.fontSizeUnit.pixels}px ${this.fontFace}`
     }
 
     draw(ctx: CanvasRenderingContext2D){        

@@ -786,7 +786,7 @@ void kvs_on_render(KVS_Context* ctx)
         SDL_GL_GetDrawableSize(ctx->window, &rw, &rh);
         SDL_GetWindowSize(ctx->window, &ww,&wh);
         glViewport(0,0,rw,rh);
-        nvgBeginFrame(vg, ctx->config.width, ctx->config.height, ctx->config.retina ? rw/ww : 1);
+        nvgBeginFrame(vg, ww, wh, ctx->config.retina ? rw/ww : 1);
         
         if (duk_pcall(vm, 1) != 0)
         {

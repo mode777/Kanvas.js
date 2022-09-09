@@ -3,5 +3,5 @@
     "height": 720,
     "retina": true,
     "title": "Kanvas!", 
-    "resizable": false
+    "resizable": true
 }

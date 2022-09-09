@@ -36,10 +36,10 @@ class Game extends Node {
 
 const root = new Game('root');
 const ink = new InkStory('ink', root, { json: compiledStory });
-const bg = new Panel('panel', root, { color: '#fff', w: canvas.width, h: canvas.height });
+const bg = new Panel('panel', root, { color: '#fff', w: '100%', h: '100%' });
 const text = new TextElement('text', root, {
   x: '10%',
-  y: '10vw',
+  y: '10%',
   w: '80%',
   fontSize: '5%',
   fontFace: 'serif',
@@ -50,3 +50,5 @@ const text = new TextElement('text', root, {
 
 root.iterate(x => x['init']?.call(x));
 onRender(ctx => root.iterate(x => x['draw']?.call(x, ctx)));
+
+//onRender(_ => console.log(canvas.width, canvas.height))
