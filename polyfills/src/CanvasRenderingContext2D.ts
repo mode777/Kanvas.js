@@ -1,4 +1,5 @@
 import { Path2D } from "./Path2d";
+import * as RGBColor from 'rgbcolor'
 
 export class CanvasRenderingContext2D {
   constructor(){
@@ -23,7 +24,7 @@ export class CanvasRenderingContext2D {
     // todo: implement other overloads
     vg.beginPath();
     vg.rect(arguments[1],arguments[2],arguments[3] ?? img.width,arguments[4] ?? img.height);
-    vg.imagePattern(arguments[1],arguments[2],arguments[3] ?? img.width,arguments[4] ?? img.height, 0, (<any>img).id, 1);
+    vg.imagePattern(arguments[1],arguments[2],arguments[3] ?? img.width,arguments[4] ?? img.height, 0, (<any>img).img, 1);
     vg.fill();
   }
   beginPath(): void {
@@ -38,7 +39,9 @@ export class CanvasRenderingContext2D {
   fill(path: Path2D, fillRule?: CanvasFillRule): void;
   fill(path?: unknown, fillRule?: unknown): void {
     // TODO: Implement more
-    vg.fillColor(this.fillStyle);
+    if(this._fillColor){
+      vg.fillColor(this._fillColor.r, this._fillColor.g, this._fillColor.b, this._fillColor.alpha * 255);
+    }
     if(path){
       (<Path2D>path).apply();
     }
@@ -65,9 +68,13 @@ export class CanvasRenderingContext2D {
     vg.stroke()
     
   }
-  private _fillStyle: string | CanvasGradient | CanvasPattern = "#000"
+  private _fillStyle: string | CanvasGradient | CanvasPattern = null
+  private _fillColor: any;
   public set fillStyle(v: string | CanvasGradient | CanvasPattern){
-    //vg.fillColor(v);
+    if(v === this._fillStyle) return;
+    if(typeof(v) === 'string'){
+      this._fillColor = new RGBColor(v)
+    }
     this._fillStyle = v;
   }
   public get fillStyle() {
@@ -152,7 +159,9 @@ export class CanvasRenderingContext2D {
   fillRect(x: number, y: number, w: number, h: number): void {
     vg.beginPath();
     vg.rect(x,y,w,h);
-    vg.fillColor(this._fillStyle);
+    if(this._fillColor){
+      vg.fillColor(this._fillColor.r, this._fillColor.g, this._fillColor.b, this._fillColor.alpha * 255);
+    }
     vg.fill();
   }
   strokeRect(x: number, y: number, w: number, h: number): void {
@@ -185,7 +194,9 @@ export class CanvasRenderingContext2D {
       }
       vg.fontBlur(0)
     }
-    vg.fillColor(this._fillStyle)
+    if(this._fillColor){
+      vg.fillColor(this._fillColor.r, this._fillColor.g, this._fillColor.b, this._fillColor.alpha * 255);
+    }
     if(maxWidth){
       vg.textBox(x,y,maxWidth,text);
     } else {
@@ -218,8 +229,6 @@ export class CanvasRenderingContext2D {
   measureText(text: string): TextMetrics {
     this.setTextProps()
     const w = vg.textBounds(0,0,text);
-    //console.log(text + " " + w);
-    
     return <any>{ width: w }
   }
   strokeText(text: string, x: number, y: number, maxWidth?: number): void {

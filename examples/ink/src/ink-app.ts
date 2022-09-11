@@ -173,20 +173,46 @@ export class Control extends Node implements ControlProperties {
 }
 
 export interface PanelProperties extends ControlProperties {
-    color: string
+    color: string,
+    img: string
 }
 
 export class Panel extends Control implements PanelProperties {
 
     color: string;
+    private _img: string;
+    private _bitmap: ImageBitmap;
+    public get img(): string { return this._img; }
+    public set img(value: string) { 
+        this._img = value; 
+        this.loadImg(value).catch(x => console.log(x.stack))
+    }
 
     constructor(id: string, parent: Node = null, props: Partial<PanelProperties> = { color: '#fff' }){
         super(id, parent, props);
     }
 
+    private async loadImg(path: string){
+        this._bitmap = await createImageBitmap(await (await fetch(path)).blob());
+    }
+
     draw(ctx: CanvasRenderingContext2D){
-        ctx.fillStyle = this.color
-        ctx.fillRect(this.xUnit.pixels,this.yUnit.pixels,this.wUnit.pixels,this.hUnit.pixels)
+        if(this._bitmap){
+            let w = this.wUnit.pixels;
+            let h = this.hUnit.pixels;
+            if(w === 0 && h === 0){
+                w = this._bitmap.width;
+                h = this._bitmap.height;
+            } else if(w === 0){
+                w = this._bitmap.width * (h / this._bitmap.height)
+            } else if(h === 0){
+                h = this._bitmap.height * (w / this._bitmap.width);
+            }
+            ctx.drawImage(this._bitmap, this.xUnit.pixels,this.yUnit.pixels,w,h);
+        } else {
+            ctx.fillStyle = this.color
+            ctx.fillRect(this.xUnit.pixels,this.yUnit.pixels,this.wUnit.pixels,this.hUnit.pixels)
+        }
     }
 }
 
@@ -196,7 +222,7 @@ export interface TextStyle extends ControlProperties {
     fontSize: Size,
     fontStyle: 'bold' | 'italic' | 'bold italic' | 'italic bold' | ''
     color: string,
-    shadowBlur: number,
+    shadowBlur: Size,
     shadowColor: string
     lineHeight: Size,
     align: 'left' | 'center' | 'right' 
@@ -221,7 +247,9 @@ export class TextElement extends Control implements TextStyle {
     public set fontSize(value: Size) {this.fontSizeUnit = parseUnit(value, 'v');}
     fontStyle: '' | 'bold' | 'italic' | 'bold italic' | 'italic bold';
     color: string;
-    shadowBlur: number;
+    private shadowBlurUnit: Unit;
+    public get shadowBlur(): Size { return this.shadowBlurUnit.toSize() }
+    public set shadowBlur(value: Size) { this.shadowBlurUnit = parseUnit(value, 'v') }
     shadowColor: string;
     private lineHeightUnit: Unit;
     public get lineHeight(): Size { return this.lineHeightUnit.toSize();}
@@ -241,10 +269,14 @@ export class TextElement extends Control implements TextStyle {
         this.lineHeight = this.lineHeightUnit.pixels === 0 ? this.fontSize : this.lineHeight
     }
 
+    resize(){
+        this._changed = true
+    }
+
     draw(ctx: CanvasRenderingContext2D){        
         ctx.font =  this.font
         ctx.fillStyle = this.color
-        ctx.shadowBlur = this.shadowBlur
+        ctx.shadowBlur = this.shadowBlurUnit.pixels
         ctx.shadowColor = this.shadowColor
         ctx.textBaseline = 'top'
         
@@ -254,6 +286,7 @@ export class TextElement extends Control implements TextStyle {
             this._changed = false
         }
         const x = this.xUnit.pixels;
+        
         let y = this.yUnit.pixels;
         for (const line of this.lines) {
             const offset = this.align === 'left' 
@@ -261,6 +294,7 @@ export class TextElement extends Control implements TextStyle {
             ctx.fillText(line.text, x+offset,y);
             y += this.lineHeightUnit.pixels;
         }
+        ctx.shadowBlur = 0;
         //ctx.beginPath()
         //ctx.strokeRect(this.x, this.y, this.w, this.h)
     }

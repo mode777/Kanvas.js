@@ -13,6 +13,7 @@ export class EventHandler<T> {
 export class KvsFramework {
     public onRender = new EventHandler<CanvasRenderingContext2D>();
     public onUpdate = new EventHandler<void>();
+    public onResize = new EventHandler<[number,number]>();
     public readonly context: CanvasRenderingContext2D;
     public readonly mouse: KvsMouse
     public readonly screen: KvsScreen
@@ -32,8 +33,11 @@ export class KvsFramework {
     }
 
     private loop() {
-        this.screen.width = this.canvas.width
-        this.screen.height = this.canvas.height
+        if(this.canvas.width !== this.screen.width || this.canvas.height !== this.screen.height){
+            this.screen.width = this.canvas.width
+            this.screen.height = this.canvas.height
+            this.onResize.dispatch([this.canvas.width,this.canvas.height])
+        }
         this.onUpdate.dispatch()
         this.context.clearRect(0, 0, this.screen.width, this.screen.height)
         this.onRender.dispatch(this.context)
@@ -111,6 +115,10 @@ export function KvsInit(canvas: HTMLCanvasElement) {
 
 export function onRender(fn: (ctx: CanvasRenderingContext2D) => void){
     framework.onRender.subscribe(fn);
+}
+
+export function onResize(fn: (size: [number,number]) => void){
+    framework.onResize.subscribe(fn);
 }
 
 export function waitForEvent<T extends Event>(name: string, target: EventTarget = window, predicate?: (ev: T) => boolean) {

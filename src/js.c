@@ -111,13 +111,11 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
                 switch (event->window.event)
                 {
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    
-                    SDL_GetWindowSize(ctx->window, &w, &h);
                     duk_push_global_object(vm);
                     duk_get_prop_string(vm, -1, "kanvas");
-                    duk_push_int(vm, w);
+                    duk_push_int(vm, event->window.data1);
                     duk_put_prop_string(vm, -2, "width");
-                    duk_push_int(vm, h);
+                    duk_push_int(vm, event->window.data2);
                     duk_put_prop_string(vm, -2, "height");
                     duk_pop_2(vm);
                     break;

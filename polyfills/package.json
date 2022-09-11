@@ -21,6 +21,7 @@
     "core-js": "^3.25.0",
     "promise-polyfill": "^8.2.3",
     "reflect-metadata": "^0.1.13",
+    "rgbcolor": "^1.0.1",
     "tslib": "^2.4.0"
   }
 }

@@ -65,7 +65,7 @@ static duk_ret_t js_vg_fillColor(duk_context *ctx)
         unsigned char r = duk_require_int(ctx, 0);
         unsigned char g = duk_require_int(ctx, 1);
         unsigned char b = duk_require_int(ctx, 2);
-        unsigned char a = duk_require_int(ctx, 3);
+        unsigned char a = duk_get_int_default(ctx, 3, 255);
         color = nvgRGBA(r, g, b, a);
     }
     nvgFillColor(vg, color);
@@ -189,7 +189,7 @@ static duk_ret_t js_vg_strokeColor(duk_context *ctx)
         unsigned char r = duk_require_int(ctx, 0);
         unsigned char g = duk_require_int(ctx, 1);
         unsigned char b = duk_require_int(ctx, 2);
-        unsigned char a = duk_require_int(ctx, 3);
+        unsigned char a = duk_get_int_default(ctx, 3, 255);
         color = nvgRGBA(r, g, b, a);
     }
     nvgStrokeColor(vg, color);
@@ -427,6 +427,17 @@ static duk_ret_t js_vg_clear(duk_context *ctx){
     return 1;
 }
 
+static duk_ret_t js_vg_deleteImage(duk_context *ctx)
+{    
+    duk_require_object(ctx, 0);
+    duk_get_prop_string(ctx, 0, "_ptr");
+    uint id = (uint)(size_t)duk_get_pointer_default(ctx, -1, NULL);
+    nvgDeleteImage(vg, id);
+    
+    return 0;
+}
+
+
 static duk_ret_t js_vg_createImage(duk_context *ctx)
 {
     int id;
@@ -443,16 +454,28 @@ static duk_ret_t js_vg_createImage(duk_context *ctx)
 
         id = nvgCreateImageMem(vg, flag, mem, len);
     }
+    if(id == 0){
+        duk_error(ctx, DUK_ERR_TYPE_ERROR, "Invalid imagedata or path");
+        return 1;
+    }
 
-    duk_push_uint(ctx, id);
+    duk_push_object(ctx);
+    duk_push_pointer(ctx, (void*)(size_t)id);
+    duk_put_prop_string(ctx, -2, "_ptr");
+
+    // Store the function destructor
+    duk_push_c_function(ctx, js_vg_deleteImage, 1);
+    duk_set_finalizer(ctx, -2);
 
     return 1;
 }
 
 static duk_ret_t js_vg_imageSize(duk_context *ctx)
 {
-    duk_uint_t id = duk_require_uint(ctx, 0);
-
+    duk_require_object(ctx, 0);
+    duk_get_prop_string(ctx, 0, "_ptr");
+    uint id = (uint)(size_t)duk_get_pointer_default(ctx, -1, NULL);
+    
     int w, h;
     nvgImageSize(vg, id, &w, &h);
 
@@ -465,14 +488,6 @@ static duk_ret_t js_vg_imageSize(duk_context *ctx)
     return 1;
 }
 
-static duk_ret_t js_vg_deleteImage(duk_context *ctx)
-{
-    duk_uint_t id = duk_require_uint(ctx, 0);
-
-    nvgDeleteImage(vg, id);
-
-    return 0;
-}
 
 static duk_ret_t js_vg_imagePattern(duk_context *ctx)
 {
@@ -481,10 +496,12 @@ static duk_ret_t js_vg_imagePattern(duk_context *ctx)
     float ex = duk_require_number(ctx, 2);
     float ey = duk_require_number(ctx, 3);
     float angle = duk_require_number(ctx, 4);
-    duk_int_t imgId = duk_require_int(ctx, 5);
     float alpha = duk_require_number(ctx, 6);
+    duk_require_object(ctx, 5);
+    duk_get_prop_string(ctx, 5, "_ptr");
+    uint id = (uint)(size_t)duk_get_pointer_default(ctx, -1, NULL);
 
-    NVGpaint paint = nvgImagePattern(vg, ox, oy, ex, ey, angle, imgId, alpha);
+    NVGpaint paint = nvgImagePattern(vg, ox, oy, ex, ey, angle, id, alpha);
     nvgFillPaint(vg, paint);
 
     return 0;
@@ -776,10 +793,10 @@ void kvs_on_render(KVS_Context* ctx)
     duk_require_stack(vm, 2);
     if(kvs_push_callback(vm, "onrender")){
         glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
-
+        
         double time = ((double)SDL_GetTicks());
         duk_push_number(vm, time);
         int ww,wh,rw,rh;
@@ -787,7 +804,8 @@ void kvs_on_render(KVS_Context* ctx)
         SDL_GetWindowSize(ctx->window, &ww,&wh);
         glViewport(0,0,rw,rh);
         nvgBeginFrame(vg, ww, wh, ctx->config.retina ? rw/ww : 1);
-        
+        nvgGlobalCompositeBlendFunc(vg, NVG_SRC_ALPHA, NVG_ONE_MINUS_SRC_ALPHA);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
         if (duk_pcall(vm, 1) != 0)
         {
             kvs_print_error(ctx, KVS_RUNTIME);

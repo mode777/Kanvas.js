@@ -152,23 +152,17 @@ class Response {
 
 class ImageBitmap {
   private readonly size: any
-  constructor(public readonly id: number){
-    this.size = vg.imageSize(id)
+  constructor(public readonly img: any){
+    this.size = vg.imageSize(img)
   }
   get width() { return this.size.width }
   get height() { return this.size.height }
-  close(){
-    vg.deleteImage(this.id)
-  }
 }
 
 async function createImageBitmap(blob: Blob){
   const arr = await blob.arrayBuffer();
-  const id = vg.createImage(arr,0);
-  if(id === 0){
-    throw new Error("Unable to decode image");
-  }
-  return new ImageBitmap(id);
+  const img = vg.createImage(arr,0);
+  return new ImageBitmap(img);
 }
 (<any>window).createImageBitmap = createImageBitmap;
 
@@ -179,3 +173,8 @@ function fetch(path: string) {
 (<any>window).fetch = fetch;
 (<any>window).Path2D = Path2D;
 
+class RadialGradient {
+  apply(){
+    
+  }
+}

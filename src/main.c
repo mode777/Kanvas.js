@@ -37,8 +37,8 @@ static void init(){
 }
 
 static void dispose(){
-  kvs_nanovg_dispose();
   kvs_dispose(&ctx);
+  kvs_nanovg_dispose();
 }
 
 static void reset(){
