@@ -40,7 +40,7 @@ const bg = new Panel('bg', root, {
   color: '#fff', 
   w: '100%', 
 //  h: '100%', 
-  img: 'assets/png/bg_alley.png'
+  img: 'assets/png/bg_station.png'
 });
 const overlay = new Panel('overlay', root, { 
   color: 'rgba(255,255,255,0.5)', 
@@ -65,7 +65,7 @@ const actor = new Panel('actor', root, {
   //x: '%',
   //w: '100%', 
   h: '66%',
-  img: 'assets/png/women_05.png'
+  img: 'assets/png/women_04.png'
 });
 // const actor2 = new Panel('actor2', root, { 
 //   color: '#00000088', 
