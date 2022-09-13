@@ -423,6 +423,7 @@ static duk_ret_t js_vg_textMetrics(duk_context *ctx)
 }
 
 static duk_ret_t js_vg_clear(duk_context *ctx){
+    glClearColor(1,1,1,0);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     return 1;
 }
@@ -804,7 +805,9 @@ void kvs_on_render(KVS_Context* ctx)
         SDL_GetWindowSize(ctx->window, &ww,&wh);
         glViewport(0,0,rw,rh);
         nvgBeginFrame(vg, ww, wh, ctx->config.retina ? rw/ww : 1);
-        nvgGlobalCompositeBlendFunc(vg, NVG_SRC_ALPHA, NVG_ONE_MINUS_SRC_ALPHA);
+        //nvgGlobalCompositeBlendFunc(vg, NVG_SRC_ALPHA, NVG_ONE_MINUS_SRC_ALPHA);
+        //nvgGlobalCompositeBlendFuncSeparate(vg, NVG_SRC_ALPHA, NVG_ONE_MINUS_SRC_ALPHA, NVG_ONE, NVG_ZERO);
+        //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
         //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
         if (duk_pcall(vm, 1) != 0)
         {
