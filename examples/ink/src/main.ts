@@ -129,13 +129,17 @@ function drawCharacter(ctx: CanvasRenderingContext2D, name,position){
   const image = getImage(`assets/png/${name}.png`);
   if(!image) return;
   const s = (ctx.canvas.height * 0.7) / image.height
-  //const scale = 1 + (Math.sin(Time.elapsed/1000)*0.1)
-  const offsetY = (Math.sin(Time.elapsed/2222)*(ctx.canvas.height*0.01))
-  const offsetX = (Math.sin(Time.elapsed/2888)*(ctx.canvas.width*0.01))
+  const scale = 1 + (Math.sin(Time.elapsed/800)*0.01)
+  const offsetY = (Math.sin(Time.elapsed/800)*(ctx.canvas.height*0.004))
+  const offsetX = (Math.sin(Time.elapsed/2888)*(ctx.canvas.width*0.003))
   //ctx.translate(-image.width/2,-image.height/2)
-  ctx.translate(offsetX,offsetY)
+  //ctx.translate(offsetX,offsetY)
   //ctx.translate()
-  ctx.drawImage(image, -ctx.canvas.width * 0.15, ctx.canvas.height * 0.35, image.width * s, image.height * s);
+  ctx.translate(offsetX + ctx.canvas.width * 0.20,offsetY + ctx.canvas.height * 0.7)
+  ctx.scale(s*scale,s*scale)
+  ctx.rotate(Math.sin(Time.elapsed / 800)*0.01)
+  ctx.translate(-image.width/2,-image.height/2)
+  ctx.drawImage(image, 0,0);
   //ctx.drawImage(image, -ctx.canvas.width * 0.1, ctx.canvas.height * 0.35, image.width * s, image.height * s);
   ctx.resetTransform()
 }
@@ -167,8 +171,8 @@ function drawScene(ctx, state: Scene){
 }
 
 const state = {
-  background: 'bg_garage',
-  characterLeft: 'women_03'
+  background: 'bg_station',
+  characterLeft: 'man_05'
 }
 
 onRender(ctx => {
