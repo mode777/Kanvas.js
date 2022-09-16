@@ -13,7 +13,7 @@ export class CanvasRenderingContext2D {
     // vg.createFont("serif:italic", "assets/fonts/NotoSerif/NotoSerif-Italic.ttf");
     // vg.createFont("serif:bold:italic", "assets/fonts/NotoSerif/NotoSerif-BoldItalic.ttf");
   }
-  globalAlpha: number;
+  globalAlpha: number = 1
   globalCompositeOperation: any;
 
   drawImage(image: CanvasImageSource, dx: number, dy: number): void;
@@ -25,6 +25,7 @@ export class CanvasRenderingContext2D {
     vg.beginPath();
     vg.rect(arguments[1],arguments[2],arguments[3] ?? img.width,arguments[4] ?? img.height);
     vg.imagePattern(arguments[1],arguments[2],arguments[3] ?? img.width,arguments[4] ?? img.height, 0, (<any>img).img, 1);
+    vg.globalAlpha(this.globalAlpha);
     vg.fill();
   }
   beginPath(): void {
@@ -45,6 +46,7 @@ export class CanvasRenderingContext2D {
     if(path){
       (<Path2D>path).apply();
     }
+    vg.globalAlpha(this.globalAlpha);
     vg.fill();
   }
   isPointInPath(x: number, y: number, fillRule?: CanvasFillRule): boolean;
@@ -65,6 +67,7 @@ export class CanvasRenderingContext2D {
     if(path){
       (<Path2D>path).apply();
     } 
+    vg.globalAlpha(this.globalAlpha);
     vg.stroke()
     
   }
@@ -162,6 +165,7 @@ export class CanvasRenderingContext2D {
     if(this._fillColor){
       vg.fillColor(this._fillColor.r, this._fillColor.g, this._fillColor.b, this._fillColor.alpha * 255);
     }
+    vg.globalAlpha(this.globalAlpha);
     vg.fill();
   }
   strokeRect(x: number, y: number, w: number, h: number): void {
@@ -169,6 +173,7 @@ export class CanvasRenderingContext2D {
     vg.rect(x,y,w,h);
     vg.strokeWidth(this.lineWidth);
     vg.strokeColor(this.strokeStyle)
+    vg.globalAlpha(this.globalAlpha);
     vg.stroke()
   }
   shadowBlur = 0;

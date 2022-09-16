@@ -1,7 +1,8 @@
 import compiledStory from './../ink/test2.ink';
-import { KvsInit, Mouse, onRender, onResize, Time } from './framework'
+import { Framework, KvsInit, Mouse, onRender, onResize, Time } from './framework'
 import { Node } from './scene-graph'
 import { InkStory, Panel, TextElement } from './ink-app'
+import { EaseFunc, EaseFuncs, tweenValue } from './easing';
 
 const canvas = window['kanvas'] ?? <HTMLCanvasElement>document.getElementById('canvas')
 
@@ -94,87 +95,146 @@ const actor = new Panel('actor', root, {
 //   ctx.resetTransform();
 // })
 
-interface CharacterState {
 
-}
+// interface Scene {
+//   background?: BackgroundState,
+//   characterLeft?: string,
+//   characterRight?: string,
+// }
 
-interface Scene {
-  background?: string,
-  characterLeft?: string,
-  characterRight?: string,
-}
+const ctx = Framework.context;
 
-const lookup = {}
+//const lookup = {}
 
-async function loadImage(file: string){
-  return await createImageBitmap(await (await fetch(file)).blob());
-}
 
-function getImage(file: string) {
-  const el = lookup[file]
-  if(!el){
-    const p = loadImage(file)
-      .then(i => lookup[file] = i)
-      .catch(e => console.log(e.err));
-    lookup[file] = p
-    return null;
-  } else if(el instanceof Promise){
-    return null;
-  } else {
-    return el
+
+// function getImage(file: string) {
+//   const el = lookup[file]
+//   if(!el){
+//     const p = loadImage(file)
+//       .then(i => lookup[file] = i)
+//       .catch(e => console.log(e.err));
+//     lookup[file] = p
+//     return null;
+//   } else if(el instanceof Promise){
+//     return null;
+//   } else {
+//     return el
+//   }
+// }
+
+
+
+class DrawUtils {
+  private constructor(){}
+  static drawFullScreenImage(ctx: CanvasRenderingContext2D, image: ImageBitmap){
+    const sx = ctx.canvas.width / image.width
+    const sy = ctx.canvas.height / image.height
+    let w,h
+    if(sx > sy){
+      w = ctx.canvas.width
+      h = image.height * sx
+    } else {
+      h = ctx.canvas.height
+      w = image.width * sy
+    }
+    ctx.drawImage(image, -(w - ctx.canvas.width)/2 - (w*0.01),-(h-ctx.canvas.height)/2 -(h*0.01), w*1.02, h*1.02)
+  }
+  static async loadImage(file: string){
+    return await createImageBitmap(await (await fetch(file)).blob());
   }
 }
 
-function drawCharacter(ctx: CanvasRenderingContext2D, name,position){
-  const image = getImage(`assets/png/${name}.png`);
-  if(!image) return;
-  const s = (ctx.canvas.height * 0.7) / image.height
-  const scale = 1 + (Math.sin(Time.elapsed/800)*0.01)
-  const offsetY = (Math.sin(Time.elapsed/800)*(ctx.canvas.height*0.004))
-  const offsetX = (Math.sin(Time.elapsed/2888)*(ctx.canvas.width*0.003))
-  //ctx.translate(-image.width/2,-image.height/2)
-  //ctx.translate(offsetX,offsetY)
-  //ctx.translate()
-  ctx.translate(offsetX + ctx.canvas.width * 0.20,offsetY + ctx.canvas.height * 0.7)
-  ctx.scale(s*scale,s*scale)
-  ctx.rotate(Math.sin(Time.elapsed / 800)*0.01)
-  ctx.translate(-image.width/2,-image.height/2)
-  ctx.drawImage(image, 0,0);
-  //ctx.drawImage(image, -ctx.canvas.width * 0.1, ctx.canvas.height * 0.35, image.width * s, image.height * s);
-  ctx.resetTransform()
-}
+class CharacterRenderer {
+  image: ImageBitmap = null
+  position: 'left' | 'right' = 'left'
+  flipped = false
 
-function drawBackground(ctx: CanvasRenderingContext2D, name){
-  const image = getImage(`assets/png/${name}.png`);
-  if(!image) return;
-  const sx = ctx.canvas.width / image.width
-  const sy = ctx.canvas.height / image.height
-  let w,h
-  if(sx > sy){
-    w = ctx.canvas.width
-    h = image.height * sx
-  } else {
-    h = ctx.canvas.height
-    w = image.width * sy
+  draw(ctx: CanvasRenderingContext2D){
+    if(!this.image) return;
+    const s = (ctx.canvas.height * 0.7) / this.image.height
+    const scale = 1 + (Math.sin(Time.elapsed/800)*0.01)
+    const offsetY = (Math.sin(Time.elapsed/800)*(ctx.canvas.height*0.004))
+    const offsetX = (Math.sin(Time.elapsed/2888)*(ctx.canvas.width*0.003))
+    //ctx.translate(-image.width/2,-image.height/2)
+    //ctx.translate(offsetX,offsetY)
+    //ctx.translate()
+    const x = ctx.canvas.width * (this.position == 'left' ?  0.20 : 0.80)
+    ctx.translate(offsetX + x,offsetY + ctx.canvas.height * 0.7)
+    ctx.scale(s*scale * (this.flipped ? -1 : 1),s*scale)
+    ctx.rotate(Math.sin(Time.elapsed / 800)*0.01)
+    ctx.translate(-this.image.width/2,-this.image.height/2)
+    ctx.drawImage(this.image, 0,0);
+    //ctx.drawImage(image, -ctx.canvas.width * 0.1, ctx.canvas.height * 0.35, image.width * s, image.height * s);
+    ctx.resetTransform()
   }
-  ctx.drawImage(image, -(w - ctx.canvas.width)/2 - (w*0.01),-(h-ctx.canvas.height)/2 -(h*0.01), w*1.02, h*1.02) 
-
-  ctx.fillStyle = 'rgba(255,255,255,0.3)'
-  ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height)
 }
 
-function drawScene(ctx, state: Scene){
-  if(state.background) drawBackground(ctx, state.background);
-  if(state.characterLeft) drawCharacter(ctx, state.characterLeft, 'left')
-  if(state.characterRight) drawCharacter(ctx, state.characterRight, 'right')
+class BackgroundRenderer {
+  fade = 0
+  imageA: ImageBitmap = null;
+  imageB: ImageBitmap = null;
 
+  draw(ctx: CanvasRenderingContext2D){
+    ctx.globalAlpha = 1 - this.fade;
+    if(this.imageA) DrawUtils.drawFullScreenImage(ctx,this.imageA);
+    ctx.globalAlpha = this.fade;
+    if(this.imageB) DrawUtils.drawFullScreenImage(ctx,this.imageB);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'
+    ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height)
+  }
 }
 
-const state = {
-  background: 'bg_station',
-  characterLeft: 'man_05'
+class Background {
+  private name: string
+  renderer = new BackgroundRenderer()
+
+  async change(name: string, time = 1000){
+    this.name = name;
+    const bg = this.renderer;
+    const img = await DrawUtils.loadImage(`assets/png/${name}.png`)
+    bg.imageB = img
+    await tweenValue(0, 1, time, EaseFuncs.easeInQuad, v => bg.fade = v)
+    bg.imageA = img 
+    bg.imageB = null 
+    bg.fade = 0
+  }
 }
+
+class Character {
+  private name: string
+  renderer = new CharacterRenderer()
+
+  async change(name: string){
+    var c = this.renderer
+    c.image = await DrawUtils.loadImage(`assets/png/${name}.png`)
+  }
+}
+
+class Scene {
+  
+  background = new Background();
+  charLeft = new Character();
+  charRight = new Character();
+  
+  draw(ctx: CanvasRenderingContext2D){
+    this.background.renderer.draw(ctx)
+    this.charLeft.renderer.draw(ctx)
+    this.charRight.renderer.draw(ctx)
+  }
+
+  async run(){
+    await this.background.change('bg_alley', 3000)
+    await this.background.change('bg_alley_02')
+    await this.charLeft.change('man_02')
+  }
+}
+
+const scene = new Scene()
 
 onRender(ctx => {
-  drawScene(ctx,state);
-})
+  scene.draw(ctx);
+});
+
+scene.run().catch(err => console.log(err.stack));

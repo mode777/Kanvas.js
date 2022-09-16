@@ -80,15 +80,23 @@ class Kanvas {
   }
 }
 
+const animationFrames = [];
+
 function requestAnimationFrame(fn) {
-  window["onrender"] = function (time) {
-    window["onrender"] = null
-    fn(time)
-  }
+  animationFrames.push(fn)
 }
+
+window["onrender"] = function (time) {
+  const length = animationFrames.length;
+  for (let i = 0; i < length; i++) {
+    const frame = animationFrames.shift();
+    frame(time)
+  }
+};
 
 (<any>window).kanvas = new Kanvas();
 (<any>window).requestAnimationFrame = requestAnimationFrame;
+
 (<any>window).dispatchEvent = (ev) => {
   window.kanvas.dispatchEvent(ev)
 }

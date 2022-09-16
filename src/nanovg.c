@@ -10,6 +10,8 @@
 
 #include "js.h"
 
+static unsigned int startTime;
+
 static NVGcontext *vg;
 
 static NVGcolor parse_html_color(const char *str, int len)
@@ -432,7 +434,7 @@ static duk_ret_t js_vg_deleteImage(duk_context *ctx)
 {    
     duk_require_object(ctx, 0);
     duk_get_prop_string(ctx, 0, "_ptr");
-    uint id = (uint)(size_t)duk_get_pointer_default(ctx, -1, NULL);
+    unsigned int id = (unsigned int)(size_t)duk_get_pointer_default(ctx, -1, NULL);
     nvgDeleteImage(vg, id);
     
     return 0;
@@ -475,7 +477,7 @@ static duk_ret_t js_vg_imageSize(duk_context *ctx)
 {
     duk_require_object(ctx, 0);
     duk_get_prop_string(ctx, 0, "_ptr");
-    uint id = (uint)(size_t)duk_get_pointer_default(ctx, -1, NULL);
+    unsigned int id = (unsigned int)(size_t)duk_get_pointer_default(ctx, -1, NULL);
     
     int w, h;
     nvgImageSize(vg, id, &w, &h);
@@ -563,6 +565,15 @@ static duk_ret_t js_vg_createFont(duk_context *ctx)
     if(nvgCreateFont(vg, name, path) == -1){
         return DUK_ERR_URI_ERROR;
     }
+
+    return 0;
+}
+
+static duk_ret_t js_vg_globalAlpha(duk_context *ctx)
+{
+    float alpha = duk_require_number(ctx, 0);
+
+    nvgGlobalAlpha(vg, alpha);
 
     return 0;
 }
@@ -730,11 +741,13 @@ BREAK:
       { "resetTransform", js_vg_resetTransform, 0 },
       { "clear", js_vg_clear, 0 },
       { "applyPath", js_vg_applyPath, 1 },
+      { "globalAlpha", js_vg_globalAlpha, 1 },
       { NULL, NULL, 0 }
   };
 
 void kvs_init_vg(KVS_Context* ctx)
 {
+    startTime = SDL_GetTicks();
     duk_context *vm = ctx->vm;
     vg = nvgCreateGLES2(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
 
@@ -798,7 +811,7 @@ void kvs_on_render(KVS_Context* ctx)
         glEnable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
         
-        double time = ((double)SDL_GetTicks());
+        double time = ((double)SDL_GetTicks() - startTime);
         duk_push_number(vm, time);
         int ww,wh,rw,rh;
         SDL_GL_GetDrawableSize(ctx->window, &rw, &rh);

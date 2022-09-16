@@ -68,10 +68,12 @@ class KvsTime {
         })
     }
 
+
+
     update(t){
         this.elapsed = t
         for (let i = this.timers.length-1; i >= 0; i--) {
-            const t = this.timers[i];            
+            const t = this.timers[i];         
             if((t.targetTime && t.targetTime <= this.elapsed) || 
                 t.targetCondition && t.targetCondition()){
                 t.callback()
@@ -100,25 +102,25 @@ class KvsScreen {
     constructor(public width: number, public height: number){}
 }
 
-let framework: KvsFramework
+export let Framework: KvsFramework
 
 export let Mouse: KvsMouse
 export let Screen: KvsScreen
 export let Time: KvsTime
 
 export function KvsInit(canvas: HTMLCanvasElement) {
-    framework = new KvsFramework(canvas);
-    Mouse = framework.mouse
-    Time = framework.time
-    Screen = framework.screen
+    Framework = new KvsFramework(canvas);
+    Mouse = Framework.mouse
+    Time = Framework.time
+    Screen = Framework.screen
 }
 
 export function onRender(fn: (ctx: CanvasRenderingContext2D) => void){
-    framework.onRender.subscribe(fn);
+    Framework.onRender.subscribe(fn);
 }
 
 export function onResize(fn: (size: [number,number]) => void){
-    framework.onResize.subscribe(fn);
+    Framework.onResize.subscribe(fn);
 }
 
 export function waitForEvent<T extends Event>(name: string, target: EventTarget = window, predicate?: (ev: T) => boolean) {
