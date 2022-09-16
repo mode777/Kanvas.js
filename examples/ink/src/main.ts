@@ -124,6 +124,22 @@ const ctx = Framework.context;
 // }
 
 
+class TimeUtils {
+  static async wait(time: number){
+    return new Promise<void>((res,rej) => {
+      let start = -1
+      const fn = t => {
+        if(start === -1) start = t
+        if((t-start) >= time){
+          res()   
+        } else {
+          requestAnimationFrame(fn)
+        }
+      }
+      requestAnimationFrame(fn)
+    });
+  }
+}
 
 class DrawUtils {
   private constructor(){}
@@ -174,15 +190,20 @@ class BackgroundRenderer {
   fade = 0
   imageA: ImageBitmap = null;
   imageB: ImageBitmap = null;
+  overlayColor = '#fff'
+  overlayAlpha = 0
 
   draw(ctx: CanvasRenderingContext2D){
     ctx.globalAlpha = 1 - this.fade;
     if(this.imageA) DrawUtils.drawFullScreenImage(ctx,this.imageA);
     ctx.globalAlpha = this.fade;
     if(this.imageB) DrawUtils.drawFullScreenImage(ctx,this.imageB);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = 'rgba(255,255,255,0.3)'
-    ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height)
+    if(this.overlayAlpha > 0){
+      ctx.globalAlpha = this.overlayAlpha;
+      ctx.fillStyle = this.overlayColor
+      ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height)
+      ctx.globalAlpha = 1
+    }
   }
 }
 
@@ -190,7 +211,7 @@ class Background {
   private name: string
   renderer = new BackgroundRenderer()
 
-  async change(name: string, time = 1000){
+  async changeBg(name: string, time = 0){
     this.name = name;
     const bg = this.renderer;
     const img = await DrawUtils.loadImage(`assets/png/${name}.png`)
@@ -199,6 +220,17 @@ class Background {
     bg.imageA = img 
     bg.imageB = null 
     bg.fade = 0
+  }
+
+  async showOverlay(color: string = '#fff', alpha = 0.2, time = 0){
+    const bg = this.renderer;
+    bg.overlayColor = color
+    await tweenValue(bg.overlayAlpha, alpha, time, EaseFuncs.easeOutCubic, v => bg.overlayAlpha = v);        
+  }
+
+  async hideOverlay(time = 0){
+    const bg = this.renderer;
+    await tweenValue(bg.overlayAlpha, 0, time, EaseFuncs.easeInCubic, v => bg.overlayAlpha = v);        
   }
 }
 
@@ -225,8 +257,12 @@ class Scene {
   }
 
   async run(){
-    await this.background.change('bg_alley', 3000)
-    await this.background.change('bg_alley_02')
+    await this.background.changeBg('bg_alley', 3000)
+    await this.background.showOverlay('#fff', 0.2, 1000)
+    await TimeUtils.wait(1000)
+    await this.background.hideOverlay(1000)
+    await this.background.changeBg('bg_alley_02', 1000)
+    await this.background.showOverlay('#fff', 0.2, 1000)
     await this.charLeft.change('man_02')
   }
 }

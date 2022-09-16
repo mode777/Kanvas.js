@@ -502,7 +502,7 @@ static duk_ret_t js_vg_imagePattern(duk_context *ctx)
     float alpha = duk_require_number(ctx, 6);
     duk_require_object(ctx, 5);
     duk_get_prop_string(ctx, 5, "_ptr");
-    uint id = (uint)(size_t)duk_get_pointer_default(ctx, -1, NULL);
+    unsigned int id = (unsigned int)(size_t)duk_get_pointer_default(ctx, -1, NULL);
 
     NVGpaint paint = nvgImagePattern(vg, ox, oy, ex, ey, angle, id, alpha);
     nvgFillPaint(vg, paint);
