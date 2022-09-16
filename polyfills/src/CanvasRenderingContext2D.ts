@@ -13,7 +13,13 @@ export class CanvasRenderingContext2D {
     // vg.createFont("serif:italic", "assets/fonts/NotoSerif/NotoSerif-Italic.ttf");
     // vg.createFont("serif:bold:italic", "assets/fonts/NotoSerif/NotoSerif-BoldItalic.ttf");
   }
-  globalAlpha: number = 1
+  private _globalAlpha: number = 1;
+  public get globalAlpha(): number {
+    return this._globalAlpha;
+  }
+  public set globalAlpha(value: number) {
+    this._globalAlpha = value ?? 1;
+  }
   globalCompositeOperation: any;
 
   drawImage(image: CanvasImageSource, dx: number, dy: number): void;
@@ -189,6 +195,7 @@ export class CanvasRenderingContext2D {
 
   fillText(text: string, x: number, y: number, maxWidth?: number): void {
     this.setTextProps()
+    vg.globalAlpha(this.globalAlpha)
     if(this.shadowBlur != 0){
       vg.fontBlur(this.shadowBlur)
       vg.fillColor(this.shadowColor)
@@ -268,8 +275,27 @@ export class CanvasRenderingContext2D {
     }
     this._fontFace = `${this._fontFace}${this._fontBold ? ':bold' : ''}${this._fontItalic ? ':italic' : ''}`
   }
-  textAlign: CanvasTextAlign;
-  private _textBaseline: CanvasTextBaseline;
+  private _textAlign: CanvasTextAlign = 'start';
+  public get textAlign(): CanvasTextAlign {
+    return this._textAlign;
+  }
+  public set textAlign(value: CanvasTextAlign) {
+    this._textAlign = value;
+    switch(value){
+      case 'left':
+      case 'start':
+        this._halign = vg.ALIGN_LEFT;
+        break;
+      case 'right':
+      case 'end':
+        this._halign = vg.ALIGN_LEFT;
+        break;
+      case 'center':
+        this._halign = vg.ALIGN_CENTER;
+        break;
+    }
+  }
+  private _textBaseline: CanvasTextBaseline = "alphabetic";
   private _halign: number = vg.ALIGN_LEFT
   private _valign: number = vg.ALIGN_BASELINE
   public get textBaseline(): CanvasTextBaseline {

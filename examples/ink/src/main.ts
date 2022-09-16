@@ -1,5 +1,5 @@
 import compiledStory from './../ink/test2.ink';
-import { Framework, KvsInit, Mouse, onRender, onResize, Time } from './framework'
+import { Framework, KvsInit, Mouse, onRender, onResize, Time, Screen } from './framework'
 import { Node } from './scene-graph'
 import { InkStory, Panel, TextElement } from './ink-app'
 import { EaseFunc, EaseFuncs, tweenValue } from './easing';
@@ -161,32 +161,8 @@ class DrawUtils {
   }
 }
 
-class CharacterRenderer {
-  image: ImageBitmap = null
-  position: 'left' | 'right' = 'left'
-  flipped = false
+class Background {
 
-  draw(ctx: CanvasRenderingContext2D){
-    if(!this.image) return;
-    const s = (ctx.canvas.height * 0.7) / this.image.height
-    const scale = 1 + (Math.sin(Time.elapsed/800)*0.01)
-    const offsetY = (Math.sin(Time.elapsed/800)*(ctx.canvas.height*0.004))
-    const offsetX = (Math.sin(Time.elapsed/2888)*(ctx.canvas.width*0.003))
-    //ctx.translate(-image.width/2,-image.height/2)
-    //ctx.translate(offsetX,offsetY)
-    //ctx.translate()
-    const x = ctx.canvas.width * (this.position == 'left' ?  0.20 : 0.80)
-    ctx.translate(offsetX + x,offsetY + ctx.canvas.height * 0.7)
-    ctx.scale(s*scale * (this.flipped ? -1 : 1),s*scale)
-    ctx.rotate(Math.sin(Time.elapsed / 800)*0.01)
-    ctx.translate(-this.image.width/2,-this.image.height/2)
-    ctx.drawImage(this.image, 0,0);
-    //ctx.drawImage(image, -ctx.canvas.width * 0.1, ctx.canvas.height * 0.35, image.width * s, image.height * s);
-    ctx.resetTransform()
-  }
-}
-
-class BackgroundRenderer {
   fade = 0
   imageA: ImageBitmap = null;
   imageB: ImageBitmap = null;
@@ -205,42 +181,127 @@ class BackgroundRenderer {
       ctx.globalAlpha = 1
     }
   }
-}
-
-class Background {
-  private name: string
-  renderer = new BackgroundRenderer()
 
   async changeBg(name: string, time = 0){
-    this.name = name;
-    const bg = this.renderer;
     const img = await DrawUtils.loadImage(`assets/png/${name}.png`)
-    bg.imageB = img
-    await tweenValue(0, 1, time, EaseFuncs.easeInQuad, v => bg.fade = v)
-    bg.imageA = img 
-    bg.imageB = null 
-    bg.fade = 0
+    this.imageB = img
+    await tweenValue(0, 1, time, EaseFuncs.easeInQuad, v => this.fade = v)
+    this.imageA = img 
+    this.imageB = null 
+    this.fade = 0
   }
 
   async showOverlay(color: string = '#fff', alpha = 0.2, time = 0){
-    const bg = this.renderer;
-    bg.overlayColor = color
-    await tweenValue(bg.overlayAlpha, alpha, time, EaseFuncs.easeOutCubic, v => bg.overlayAlpha = v);        
+    this.overlayColor = color
+    await tweenValue(this.overlayAlpha, alpha, time, EaseFuncs.easeOutCubic, v => this.overlayAlpha = v);        
   }
 
   async hideOverlay(time = 0){
-    const bg = this.renderer;
-    await tweenValue(bg.overlayAlpha, 0, time, EaseFuncs.easeInCubic, v => bg.overlayAlpha = v);        
+    await tweenValue(this.overlayAlpha, 0, time, EaseFuncs.easeInCubic, v => this.overlayAlpha = v);        
   }
 }
 
 class Character {
-  private name: string
-  renderer = new CharacterRenderer()
 
-  async change(name: string){
-    var c = this.renderer
-    c.image = await DrawUtils.loadImage(`assets/png/${name}.png`)
+  image: ImageBitmap = null
+  x: number = 0
+  flipped = false
+  alpha = 1
+
+  draw(ctx: CanvasRenderingContext2D){
+    if(!this.image) return;
+    const s = (ctx.canvas.height * 0.6) / this.image.height
+    //const scale = 1 + (Math.sin(Time.elapsed/800)*0.01)
+    //const offsetY = (Math.sin(Time.elapsed/800)*(ctx.canvas.height*0.004))
+    //const offsetX = (Math.sin(Time.elapsed/2888)*(ctx.canvas.width*0.003))
+    //ctx.translate(-image.width/2,-image.height/2)
+    //ctx.translate(offsetX,offsetY)
+    //ctx.translate()
+    const x = ctx.canvas.width * this.x
+    ctx.translate(x,ctx.canvas.height * 0.7)
+    ctx.scale(s*(this.flipped ? -1 : 1),s)
+    //ctx.rotate(Math.sin(Time.elapsed / 800)*0.01)
+    ctx.translate(-this.image.width/2,-this.image.height/2)
+    ctx.globalAlpha = this.alpha
+    ctx.drawImage(this.image, 0,0);
+    //ctx.drawImage(image, -ctx.canvas.width * 0.1, ctx.canvas.height * 0.35, image.width * s, image.height * s);
+    ctx.resetTransform()
+  }
+
+  async change(name: string, align = 'left', flipped = false, time = 0){
+    this.x = align === 'left' ? -0.25 : 1.25
+    this.alpha = 0
+    this.image = await DrawUtils.loadImage(`assets/png/${name}.png`)
+    this.flipped = flipped
+    tweenValue(0, 1, time, EaseFuncs.easeInCubic, x => this.alpha = x)
+    await tweenValue(this.x, align === 'left' ? 0.2 : 0.8, time, EaseFuncs.easeOutCubic, x => this.x = x)
+  }
+}
+
+class Title {
+  title = ''
+  subtitle = ''
+  titleAlpha = 1
+  subtitleAlpha = 1
+  titleStyle = 'bold'
+  titleFont = 'serif'
+  titleHeight = 0.15
+  titleColor = '#ffffffff'
+  subtitleColor = '#fff'
+  shadowColor = '#000'
+  subtitleHeight = 0.07
+  subtitleFont = 'serif'
+  subtitleStyle = ''
+  underlineWidth = 0.8
+  underlineColor = '#a00'
+  y = 0.5
+
+  draw(ctx: CanvasRenderingContext2D){
+    ctx.textAlign = 'center'
+    const w = ctx.canvas.width
+    const h = ctx.canvas.height
+    if(this.title && this.title !== '' && this.titleAlpha > 0){
+      ctx.globalAlpha = this.titleAlpha
+      ctx.font = `${this.titleStyle} ${this.titleHeight * h}px ${this.titleFont}`
+      ctx.shadowBlur = this.titleHeight * h * 0.08
+      ctx.shadowColor = this.shadowColor
+      ctx.fillStyle = this.titleColor
+      ctx.fillText(this.title, w/2, h * this.y)
+      ctx.shadowBlur = 0
+      ctx.fillStyle = this.underlineColor
+      ctx.fillRect(w*((1 - this.underlineWidth) / 2), (this.y+0.03)*h, this.underlineWidth*w, h*0.01)
+    }
+    if(this.subtitle && this.subtitle !== '' && this.subtitleAlpha > 0){
+      ctx.globalAlpha = this.subtitleAlpha
+      ctx.font = `${this.subtitleStyle} ${this.subtitleHeight * h}px ${this.subtitleFont}`
+      ctx.shadowBlur = this.subtitleHeight * h * 0.08
+      ctx.shadowColor = this.shadowColor
+      ctx.fillStyle = this.subtitleColor
+      ctx.fillText(this.subtitle, w/2, h * (this.y+0.13))
+      ctx.shadowBlur = 0
+    }
+    ctx.globalAlpha = 1
+  }
+
+  async show(title: string, subtitle = null, time = 0){
+    this.y = 0.5
+    this.titleAlpha = 0
+    this.subtitleAlpha = 0
+    this.subtitle = subtitle
+    this.title = title
+    this.underlineWidth = 0
+    tweenValue(0,1,time*0.4, EaseFuncs.easeInCubic, x => this.titleAlpha = x)
+    await tweenValue(0, 0.8, time*0.5, EaseFuncs.linear, v => this.underlineWidth = v);
+    if(this.subtitle != null){
+      await tweenValue(this.y, this.y-0.1, time*0.2, EaseFuncs.easeOutCubic, v => this.y = v);
+      await tweenValue(0,1,time*0.3,EaseFuncs.easeInCubic, v => this.subtitleAlpha = v);
+    }
+  }
+
+  async hide(time = 0){
+    tweenValue(this.titleAlpha, 0, time, EaseFuncs.easeOutCubic, x => this.titleAlpha = x);
+    await tweenValue(this.subtitleAlpha, 0, time, EaseFuncs.easeOutCubic, x => this.subtitleAlpha = x);
+    this.title = null;
   }
 }
 
@@ -249,21 +310,29 @@ class Scene {
   background = new Background();
   charLeft = new Character();
   charRight = new Character();
+  title = new Title();
   
   draw(ctx: CanvasRenderingContext2D){
-    this.background.renderer.draw(ctx)
-    this.charLeft.renderer.draw(ctx)
-    this.charRight.renderer.draw(ctx)
+    this.background.draw(ctx)
+    this.title.draw(ctx)
+    this.charLeft.draw(ctx)
+    this.charRight.draw(ctx)
   }
 
   async run(){
-    await this.background.changeBg('bg_alley', 3000)
-    await this.background.showOverlay('#fff', 0.2, 1000)
-    await TimeUtils.wait(1000)
-    await this.background.hideOverlay(1000)
-    await this.background.changeBg('bg_alley_02', 1000)
-    await this.background.showOverlay('#fff', 0.2, 1000)
-    await this.charLeft.change('man_02')
+    await this.background.showOverlay('#000', 1)
+    await this.background.changeBg('bg_appartment_02')
+    await this.title.show("Der Bildband", 'Alexander Klingenbeck', 2000)
+    await this.background.hideOverlay(2000)
+    await TimeUtils.wait(2000)
+    await this.title.hide(2000)
+    await this.background.showOverlay('#fff', 0.2, 2000)
+
+    //await this.background.hideOverlay(1000)
+    //await this.background.changeBg('bg_alley_02', 1000)
+    //await this.background.showOverlay('#fff', 0.2, 1000)
+    this.charRight.change('man_02', 'right', true, 1000)
+    await this.charLeft.change('women_02', 'left', true, 1000)
   }
 }
 
