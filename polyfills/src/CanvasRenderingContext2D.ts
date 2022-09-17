@@ -2,16 +2,9 @@ import { Path2D } from "./Path2d";
 import * as RGBColor from 'rgbcolor'
 
 export class CanvasRenderingContext2D {
-  constructor(){
+  constructor(config){
     this.fillStyle = "#000"
-    // vg.createFont("sans-serif", "assets/fonts/Roboto/Roboto-Regular.ttf");
-    // vg.createFont("sans-serif:bold", "assets/fonts/Roboto/Roboto-Bold.ttf");
-    // vg.createFont("sans-serif:italic", "assets/fonts/Roboto/Roboto-Italic.ttf");
-    // vg.createFont("sans-serif:bold:italic", "assets/fonts/Roboto/Roboto-BoldItalic.ttf");
-    // vg.createFont("serif", "assets/fonts/NotoSerif/NotoSerif-Regular.ttf");
-    // vg.createFont("serif:bold", "assets/fonts/NotoSerif/NotoSerif-Bold.ttf");
-    // vg.createFont("serif:italic", "assets/fonts/NotoSerif/NotoSerif-Italic.ttf");
-    // vg.createFont("serif:bold:italic", "assets/fonts/NotoSerif/NotoSerif-BoldItalic.ttf");
+    this.faces = config.fonts
   }
   private _globalAlpha: number = 1;
   public get globalAlpha(): number {
@@ -215,19 +208,14 @@ export class CanvasRenderingContext2D {
       vg.text(x,y,text);
     }
   }
-  private faces = {
-    "sans-serif": "assets/fonts/Roboto/Roboto-Regular.ttf",
-    "sans-serif:bold": "assets/fonts/Roboto/Roboto-Bold.ttf",
-    "sans-serif:italic": "assets/fonts/Roboto/Roboto-Italic.ttf",
-    "sans-serif:bold:italic": "assets/fonts/Roboto/Roboto-BoldItalic.ttf",
-    "serif": "assets/fonts/NotoSerif/NotoSerif-Regular.ttf",
-    "serif:bold": "assets/fonts/NotoSerif/NotoSerif-Bold.ttf",
-    "serif:italic": "assets/fonts/NotoSerif/NotoSerif-Italic.ttf",
-    "serif:bold:italic": "assets/fonts/NotoSerif/NotoSerif-BoldItalic.ttf"
-  }
+  private faces: {[key: string]:string}
   private loaded = {}
   private checkFace(str: string){
     if(!this.loaded[str]){
+      if(!this.faces[str]){
+        console.log('Unable to find face ' + str)
+        return
+      }
       vg.createFont(str,this.faces[str])
       this.loaded[str] = true
     }

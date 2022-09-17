@@ -46,7 +46,7 @@ class Kanvas {
   public readonly height = (<any>window).kanvas_height;
 
   getContext(id) {
-    return new CanvasRenderingContext2D()
+    return new CanvasRenderingContext2D(kanvas_config ?? {})
   }
   private ensureListener(name) {
     if (!this.listeners[name]) {

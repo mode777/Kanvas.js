@@ -793,6 +793,7 @@ void kvs_init_vg(KVS_Context* ctx)
     duk_put_prop_string(vm, -2, "ALIGN_BASELINE");
 
     duk_put_prop_string(vm, objIndex - 1, "vg");
+    duk_pop(vm);
 }
 
 void kvs_on_render(KVS_Context* ctx)

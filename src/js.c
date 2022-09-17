@@ -146,7 +146,6 @@ int kvs_run_file(KVS_Context* ctx, const char* path){
             kvs_print_error(ctx, KVS_RUNTIME);
             result = -1;
         }
-        duk_pop(vm);
     }
     duk_pop(vm);
 
@@ -195,21 +194,17 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
 
     KVS_Config cfg = { .width = 640, .height = 480, .title = "Kanvas.js", .retina = true, .resizable = false };
     ctx->config = cfg;
-
+    
+    duk_push_global_object(vm);
     if(configFile != NULL && kvs_decode_json(ctx, configFile) == 0){
         ctx->config.width = get_int(vm, "width", ctx->config.width);  
         ctx->config.height = get_int(vm, "height", ctx->config.height);
         ctx->config.title = get_string(vm, "title", ctx->config.title);
         ctx->config.retina = get_bool(vm, "retina", ctx->config.retina);  
         ctx->config.resizable = get_bool(vm, "resizable", ctx->config.resizable);  
+        duk_put_prop_string(vm, -2, "kanvas_config");
     }
-    ctx->window = SDL_CreateWindow(ctx->config.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ctx->config.width, ctx->config.height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | (ctx->config.resizable ? SDL_WINDOW_RESIZABLE : 0) | SDL_WINDOW_ALLOW_HIGHDPI);
-    assert(ctx->window != NULL);
-    ctx->context = SDL_GL_CreateContext(ctx->window);
-    assert(ctx->context != NULL);
-    SDL_GL_SetSwapInterval(0);
 
-    duk_push_global_object(vm);
     int objIndex = duk_push_object(vm);
     duk_push_c_function(vm, js_print, DUK_VARARGS);
     duk_put_prop_string(vm, objIndex, "log");
@@ -220,8 +215,13 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
     duk_push_int(vm, ctx->config.height);
     duk_put_prop_string(vm, -2, "kanvas_height");
 
-
     duk_pop(vm);
+
+    ctx->window = SDL_CreateWindow(ctx->config.title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ctx->config.width, ctx->config.height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | (ctx->config.resizable ? SDL_WINDOW_RESIZABLE : 0) | SDL_WINDOW_ALLOW_HIGHDPI);
+    assert(ctx->window != NULL);
+    ctx->context = SDL_GL_CreateContext(ctx->window);
+    assert(ctx->context != NULL);
+    SDL_GL_SetSwapInterval(0);
 }
 
 void kvs_dispose(KVS_Context* ctx){

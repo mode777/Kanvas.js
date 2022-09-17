@@ -20,11 +20,16 @@ static bool quit;
 
 static void init(){
   kvs_init(&ctx, "kanvas.json");
+  //printf("a: %d\n",duk_get_top_index(ctx.vm));
   kvs_init_keys();
+  //printf("b: %d\n",duk_get_top_index(ctx.vm));
   kvs_init_fs(&ctx);
+  //printf("c: %d\n",duk_get_top_index(ctx.vm));
   kvs_init_vg(&ctx);
+  //printf("d: %d\n",duk_get_top_index(ctx.vm));
 
   kvs_run_file(&ctx, "./polyfills.js");
+  //printf("e: %d\n",duk_get_top_index(ctx.vm));
   //kvs_run_file(&ctx, "./thirdparty/duktape/polyfills/promise.js");
   if(_argc == 1){
     kvs_run_file(&ctx, "./main.js");
