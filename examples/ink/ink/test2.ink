@@ -1,8 +1,8 @@
 # author: Wolfgang Ecke
 # title: Der Bildband
 
-@(KNÖDLER set img:women_02 name:'Frau Knödler')
-@(SCHATZ set img:man_07 name:'Herr Schatz')
+@(KNÖDLER set img:women_02 name:'Frau Knödler' flipped:true)
+@(SCHATZ set img:man_08 name:'Herr Schatz')
 
 @(title show time:3000)
 @(wait time:3000)
@@ -38,7 +38,8 @@ VOICEOVER: Und Amanda Knödler, Inhaberin der Bücherei am Kaisereck, rief Herrn
 * [Verlassen?] SCHATZ: Wer verließ den Laden zuerst?
     KNÖDLER: Zuerst ging Herr Langbein …
 * -> 
-    SCHATZ: Na schön. Dann geben Sie mir mal jetzt die Adressen der beiden Stammkunden. Mal sehen, was sie zu sagen haben. ->interog
+    SCHATZ: Na schön. Dann geben Sie mir mal jetzt die Adressen der beiden Stammkunden. Mal sehen, was sie zu sagen haben. 
+    ->interog
 - -> questions
 
 === interog

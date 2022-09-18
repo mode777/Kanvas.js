@@ -213,7 +213,7 @@ export class CanvasRenderingContext2D {
   private checkFace(str: string){
     if(!this.loaded[str]){
       if(!this.faces[str]){
-        console.log('Unable to find face ' + str)
+        //console.log('Unable to find face ' + str)
         return
       }
       vg.createFont(str,this.faces[str])
@@ -244,12 +244,15 @@ export class CanvasRenderingContext2D {
     return this._font
   }
   set font(v){
+    //console.log(v)
     if(v === this._font) return;
     this._font = v
     var f = v.split(' ')
     if(f.length == 2){
       this._fontSize = parseInt(f[0])
       this._fontFace = f[1]
+      this._fontBold = false
+      this._fontItalic = false
     } else if(f.length == 3){
       this._fontBold = f[0] == 'bold'
       this._fontItalic = f[0] == 'italic'

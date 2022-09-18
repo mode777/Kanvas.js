@@ -1,3 +1,5 @@
+import { SPEEDUP } from "./debug";
+
 export type EaseFunc = (c: number, t: number, d: number, b: number) => number;
 
 export module EaseFuncs {
@@ -15,6 +17,10 @@ export module EaseFuncs {
 }
 
 export function tweenValue(from: number, to: number, duration: number, func: EaseFunc, setter: (x) => void){
+  if(SPEEDUP) {
+    setter(to)
+    return Promise.resolve()
+  }
   const delta = to - from;
   let time = 0;
   let startTime = -1;
