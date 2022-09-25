@@ -186,3 +186,45 @@ class RadialGradient {
     
   }
 }
+
+class Storage {
+
+  private data: {[key:string]:any} = {}
+  private get filename() { return window.kanvas_config.file + ".storage" }
+
+  private persist(){
+    const d = this.data[this.filename]
+    const json = JSON.stringify(d);
+    fs.writeText(this.filename, json)
+  }
+
+  private load(){
+    if(!this.data[this.filename]){
+      fs.createFile(this.filename)
+      const t = fs.readText(this.filename)
+      this.data[this.filename] = t === '' ? {} : JSON.parse(t)
+    }
+  }
+
+  setItem(key:string, value: string){
+    this.load()
+    this.data[this.filename][key] = value 
+    this.persist()
+  }
+  getItem(key:string){
+    this.load();
+    return this.data[this.filename][key]
+  }
+  removeItem(key:string){
+    this.load()
+    delete this.data[this.filename][key]
+    this.persist()
+  }
+  clear(){
+    this.load()
+    this.data[this.filename] = {}
+    this.persist()
+  }
+}
+
+(<any>window).localStorage = new Storage();

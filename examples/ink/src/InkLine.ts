@@ -21,10 +21,11 @@ export class InkLine {
       this.directives.push(new Directive(outerMatch[1]));
     }
     this.text = input.replace(this.outerReg, '').trim();
-    const parts = this.text.split(':');
-    if (parts.length > 1) {
-      this.speaker = parts[0];
-      this.text = parts[1];
+    const idx = this.text.indexOf(':')
+    if(idx !== -1){
+      this.speaker = this.text.substring(0,idx)
+      this.text = this.text.substring(idx+1).trim()
     }
   }
 }
+

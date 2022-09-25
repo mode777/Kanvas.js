@@ -1,5 +1,4 @@
 import compiledStory from './../ink/test2.ink';
-import { EaseFunc, EaseFuncs, tweenValue } from './easing';
 
 import * as ink from 'inkjs/dist/ink'
 import { Drawable } from './interfaces';
@@ -10,32 +9,34 @@ import { Title } from './Title';
 import { Voiceover } from './Voiceover';
 import { InkLine } from './InkLine';
 import { Directive } from './Directive';
-import { Paragraph } from './Paragraph';
 import { Actor } from './Actor';
+import { Choices } from './Choices';
+import { InkChoice } from './InkChoice';
+import { StatePatch } from 'inkjs/engine/StatePatch';
 
-const canvas = window['kanvas'] ?? <HTMLCanvasElement>document.getElementById('canvas')
+export const canvas = window['kanvas'] ?? <HTMLCanvasElement>document.getElementById('canvas')
 
-type Tags = {[key:string]:any}
+type Tags = { [key: string]: any }
 
 class Story {
   story: any;
   globalTags: Tags
 
-  constructor(inkData: any){
+  constructor(inkData: any) {
     this.story = new ink.Story(inkData)
-    
+
     this.globalTags = this.decodeTags(this.story.globalTags)
   }
 
-  getTags(){
+  getTags() {
     return this.decodeTags(this.story.currentTags)
   }
 
-  private decodeTags(raw: string[]): Tags{
+  private decodeTags(raw: string[]): Tags {
     const tags: Tags = {}
     for (const t of raw) {
       const spl = t.split(':')
-      if(spl.length > 1){
+      if (spl.length > 1) {
         tags[spl[0].trim()] = spl[1].trim()
       } else {
         tags[spl[0].trim()] = true
@@ -46,32 +47,36 @@ class Story {
 }
 
 abstract class Command {
-  
-  constructor(protected directive: Directive){
+
+  constructor(protected directive: Directive) {
   }
 
-  executeOperations() {
+  private combineParameters() {
     const defaults = this.getDefaults()
     const params = this.loadParameters()
-    const combined = { ...defaults, ...params }
-    if(this.directive.operations.length === 0){
-      return this.executeOperation('default', combined)
+    return { ...defaults, ...params }
+  }
+
+  executeOperations(sync: boolean) {
+    const combined = this.combineParameters()
+    if (this.directive.operations.length === 0) {
+      return this.executeOperation('default', combined, sync)
     }
-    return Promise.all(this.directive.operations.map(x => this.executeOperation(x, combined)))
+    return Promise.all(this.directive.operations.map(x => this.executeOperation(x, combined, sync)))
   }
 
-  protected tryConvertParameter(param: string, fn: (any) => any){
-    if(this.directive.parameters[param]) this.directive.parameters[param] = fn(this.directive.parameters[param])
+  protected tryConvertParameter(param: string, fn: (any) => any) {
+    if (this.directive.parameters[param]) this.directive.parameters[param] = fn(this.directive.parameters[param])
   }
 
-  protected abstract loadParameters() : any 
-  protected abstract getDefaults() : any
-  protected abstract executeOperation(name: string, parameters: any) : Promise<void>;
+  protected abstract loadParameters(): any
+  protected abstract getDefaults(): any
+  protected abstract executeOperation(name: string, parameters: any, sync: boolean): Promise<void>;
 }
 
 class TitleCommand extends Command {
   private defaults: any
-  constructor(directive: Directive, private renderer: Title, title: string, subtitle: string){
+  constructor(directive: Directive, private renderer: Title, title: string, subtitle: string) {
     super(directive)
     this.defaults = { title, subtitle, time: 1000 }
   }
@@ -82,22 +87,21 @@ class TitleCommand extends Command {
   protected getDefaults() {
     return this.defaults
   }
-  protected executeOperation(name: string, parameters: any): Promise<void> {
+  protected executeOperation(name: string, parameters: any, sync: boolean): Promise<void> {
     switch (name) {
       case 'show':
-        return this.renderer.show(parameters.title, parameters.subtitle, parameters.time)
+        return this.renderer.show(parameters.title, parameters.subtitle, sync ? 0 : parameters.time)
       case 'hide':
-        return this.renderer.hide(parameters.time)
+        return this.renderer.hide(sync ? 0 : parameters.time)
       default:
         throw new Error('Unknown operation: ' + name)
     }
   }
-
 }
 
 class ActorCommand extends Command {
 
-  constructor(directive: Directive, private actor: Actor, private costumeLeft: Costume, private costumeRight: Costume){
+  constructor(directive: Directive, private actor: Actor, private costumeLeft: Costume, private costumeRight: Costume) {
     super(directive)
   }
 
@@ -108,49 +112,56 @@ class ActorCommand extends Command {
   protected getDefaults() {
     return this.actor
   }
-  protected async executeOperation(name: string, parameters: any): Promise<void> {
+  protected async executeOperation(name: string, parameters: any, sync: boolean): Promise<void> {
     let cost: Costume;
     switch (name) {
       case 'set':
         Object.assign(this.actor, parameters)
-        return Promise.resolve()  
+        return Promise.resolve()
       case 'enter':
         cost = parameters.pos === 'right' ? this.costumeRight : this.costumeLeft
-        if(cost.visible) {
-          await cost.exit(parameters.time*0.5)
+        if (cost.visible) {
+          if (sync) {
+            cost.exit(0)
+          } else {
+            await cost.exit(parameters.time * 0.5)
+          }
           parameters.time *= 0.5
         }
-        await cost.enter(parameters, parameters.time)
-        return  
-      case 'exit': 
-        cost = parameters.pos === 'right' ? this.costumeRight : this.costumeLeft
-        if(cost.visible) {
-          await cost.exit(parameters.time)
+        if (sync) {
+          cost.enter(parameters, 0)
+        } else {
+          await cost.enter(parameters, parameters.time)
         }
+        return
+      case 'exit':
+        cost = parameters.pos === 'right' ? this.costumeRight : this.costumeLeft
+        return cost.exit(sync ? 0 : parameters.time)
       default:
         throw new Error('Unknown operation: ' + name)
     }
   }
-  
+
 }
 
 class WaitCommand extends Command {
-  
+
   protected loadParameters() {
     this.tryConvertParameter('seconds', v => parseFloat(v))
     this.tryConvertParameter('time', v => parseInt(v))
-    return { time: this.directive.parameters.time ?? this.directive.parameters.seconds*1000}
+    return { time: this.directive.parameters.time ?? this.directive.parameters.seconds * 1000 }
   }
   protected getDefaults() {
     return { time: 1000 }
   }
-  protected executeOperation(name: string, parameters: any): Promise<void> {
+  protected executeOperation(name: string, parameters: any, sync: boolean): Promise<void> {
+    if (sync) return;
     return TimeUtils.wait(parameters.time)
   }
 }
 
 class SceneCommand extends Command {
-  constructor(d: Directive, private renderer: Background){
+  constructor(d: Directive, private stage: Stage) {
     super(d)
   }
 
@@ -160,164 +171,59 @@ class SceneCommand extends Command {
   protected getDefaults() {
     return { time: 1000 }
   }
-  protected executeOperation(name: string, parameters: any): Promise<void> {
+  protected async executeOperation(name: string, parameters: any, sync: boolean): Promise<void> {
     switch (name) {
       case 'fade-in':
-        return this.renderer.fadeIn(parameters.img, parameters.time)
+        return this.stage.background.fadeIn(parameters.img, sync ? 0 : parameters.time)
+      case 'fade-out':
+        return this.stage.background.fadeOut(sync ? 0 : parameters.time)
+      case 'change':
+        if (sync) {
+          this.stage.charLeft.exit(0)
+          this.stage.charRight.exit(0)
+          this.stage.background.fadeOut(0)
+          this.stage.background.fadeIn(parameters.img, 0)
+        } else {
+          this.stage.charLeft.exit(parameters.time)
+          await this.stage.charRight.exit(parameters.time)
+          await this.stage.background.fadeOut(parameters.time)
+          await this.stage.background.fadeIn(parameters.img, parameters.time)
+        }
+        break;
       default:
         throw new Error('Unknown operation: ' + name)
     }
   }
-  
 }
 
-interface InkChoice {
-  text: string
-  index: number
-}
+class CharactersCommand extends Command {
 
-class Option implements Drawable {
-
-  private paragraph = new Paragraph()
-  private readonly handler = (ev: MouseEvent) => this.handleInput(ev);
-  private x = 0
-  private y = 0
-  private alpha = 1
-  private boundingBox = [0,0,0,0]
-  private state = 'inactive'
-  private color = 'rgba(255,255,255,0.6)'
-  private observer: (idx: number) => void;
-
-  constructor(private canvas: HTMLCanvasElement, public id: number, text: string){
-    this.paragraph.text = text
-    this.paragraph.font = 'PatrickHand'
-  }
-  
-  draw(ctx: CanvasRenderingContext2D) {
-    if(this.alpha > 0){
-      const w = this.paragraph.getPixelWidth(ctx) + (ctx.canvas.width * 0.02)
-      const h = this.paragraph.getPixelHeight(ctx) + (ctx.canvas.height * 0.02)
-      this.paragraph.x = this.x
-      this.paragraph.y = this.y
-      const x = ctx.canvas.width * (this.x-0.01)
-      const y = ctx.canvas.height * (this.y-0.01)
-      ctx.translate(-w/2,-h/2)
-      ctx.globalAlpha = this.alpha
-      ctx.fillStyle = this.color
-      ctx.fillRect(x,y,w,h);
-      ctx.strokeStyle = '#000'
-      ctx.lineWidth = 0.003 * ctx.canvas.height
-      ctx.strokeRect(x,y,w,h)
-      this.paragraph.draw(ctx)
-      ctx.globalAlpha = 1
-      ctx.translate(w/2,h/2)
-      this.boundingBox = [x-w/2,y-h/2,w,h]
-    }
+  constructor(directive: Directive, private charA: Costume, private charB: Costume) {
+    super(directive);
   }
 
-  public registerObserver(cb: (idx: number) => void){
-    this.observer = cb;
+  protected loadParameters() {
+    return this.directive.parameters
   }
-
-  private isInside(x,y){
-    const [bx,by,bw,bh] = this.boundingBox;
-    return x >= bx && y >= by && x < bx+bw && y < by+bh
+  protected getDefaults() {
+    return { time: 1000 }
   }
-
-  private handleInput(ev: MouseEvent){
-    switch (this.state) {
-      case 'inactive':
-        this.color = 'rgba(255,255,255,0.6)'
-        if(this.isInside(ev.offsetX,ev.offsetY)) this.state = 'mouseover'
-        return;
-      case 'mouseover':
-        this.color = '#fff'
-        if(!this.isInside(ev.offsetX,ev.offsetY)) {
-          this.state = 'inactive'
-          return
-        }
-        if(ev.type === 'mousedown' && ev.button === 0){
-          this.state = 'active'
-          this.color = 'rgba(255, 246, 79, 1)'
-          return 
-        }
-        return;
-      case 'active': 
-        this.color = 'rgba(255, 246, 79, 1)'
-        if(!this.isInside(ev.offsetX,ev.offsetY)) {
-          this.state = 'inactive'
-          return
-        }
-        if(ev.type === 'mouseup' && ev.button === 0){
-          this.observer(this.id)
-          this.state = 'mouseover'
-          return 
-        }
-        return;
-      default:
+  protected async executeOperation(name: string, parameters: any, sync: boolean): Promise<void> {
+    switch (name) {
+      case 'exit':
+        this.charA.exit(parameters.time)
+        await this.charB.exit(parameters.time)
         break;
+      default:
+        throw new Error('Unknown operation: ' + name)
     }
-  }
-
-  async show(x = 0, y = 0, time = 0){
-    this.x = x
-    this.y = y
-    this.alpha = 0
-    await tweenValue(0,1,time,EaseFuncs.easeInQuad,v => this.alpha = v)
-    canvas.addEventListener('mousemove', this.handler);
-    canvas.addEventListener('mousedown', this.handler);
-    canvas.addEventListener('mouseup', this.handler);
-  }
-
-  async hide(time = 0){
-    await tweenValue(this.alpha,0,time,EaseFuncs.easeInQuad,v => this.alpha = v)
-    canvas.removeEventListener('mousemove', this.handler);
-    canvas.removeEventListener('mousedown', this.handler);
-    canvas.removeEventListener('mouseup', this.handler);
   }
 
 }
 
-class Choices implements Drawable {
-  options: Option[] = []
-
-  constructor(private canvas: HTMLCanvasElement){
-
-  }
-
-  draw(ctx: CanvasRenderingContext2D) {
-    
-    for (const opt of this.options) {
-      opt.draw(ctx)
-    }
-  }
-
-  async getChoice(choices: InkChoice[], time = 0){
-    this.options = choices.map(x => new Option(this.canvas, x.index, x.text))
-    let x = 0.5
-    let y = 0.66
-    let observer: (number) => void;
-    const promise = new Promise<number>((res) => observer = res);
-    for (const opt of this.options) {
-      opt.registerObserver(observer)
-      await opt.show(x,y,time/this.options.length)
-    }
-    const choice = await promise
-    await this.hide(time)
-    return choice
-  }
-
-  async hide(time = 0){
-    for (const opt of this.options) {
-      await opt.hide(time/this.options.length)
-    }
-    this.options = []
-  }
-
-}
 
 class Stage {
-  
+
   background = new Background();
   charLeft = new Costume();
   charRight = new Costume();
@@ -325,20 +231,32 @@ class Stage {
   voiceover = new Voiceover();
   choices: Choices
   lastText: Drawable
+  fastForward = false
+  pastChoices = []
+  currentChoices = []
 
-  actors: {[key:string]: Actor } = {}
+  actors: { [key: string]: Actor } = {}
   ctx: CanvasRenderingContext2D
 
   ink: Story;
 
-  textMode: 'voiceover' = null
+  reset(){
+    this.background = new Background();
+    this.charLeft = new Costume();
+    this.charRight = new Costume();
+    this.title = new Title();
+    this.voiceover = new Voiceover();
+    this.choices = new Choices(this.canvas);
+    this.actors = {}
+    this.currentChoices = []
+  }
 
-  constructor(private canvas: HTMLCanvasElement){
+  constructor(private canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d');
     this.choices = new Choices(canvas);
   }
-  
-  draw(){
+
+  draw() {
     this.background.draw(this.ctx)
     this.charLeft.draw(this.ctx)
     this.charRight.draw(this.ctx)
@@ -347,72 +265,142 @@ class Stage {
     this.title.draw(this.ctx)
   }
 
-  private clickOrKey(){
+  private clickOrKey() {
     return Promise.race([InputUtils.waitClick(this.canvas), InputUtils.waitKey()])
   }
 
-  private async display(text: string, speaker: string){
-    if(speaker === 'VOICEOVER') { 
-      await this.voiceover.show(text, 1000);
+  private async display(text: string, speaker: string) {
+    if (speaker === 'VOICEOVER') {
+      await this.voiceover.show(text, 500);
       this.lastText = this.voiceover
       await this.clickOrKey()
-      await this.voiceover.hide(1000)
+      await this.voiceover.hide(500)
     } else {
-      let costume = speaker === this.charLeft.actorId 
-        ? this.charLeft : (speaker === this.charRight.actorId ? this.charRight : null)
-      if(costume === null){
+      let costume = speaker === this.charLeft.actorId
+        ? this.charLeft
+        : (speaker === this.charRight.actorId
+          ? this.charRight
+          : null)
+
+      if (costume === null) {
         const actor = this.actors[speaker]
-        if(!actor) throw new Error('Unknown character: ' + speaker)
+        if (!actor) throw new Error('Unknown character: ' + speaker)
         costume = actor.pos === 'left' ? this.charLeft : this.charRight
-        if(costume.actorId) await costume.exit(1000)
+        if (costume.actorId) await costume.exit(1000)
         await costume.enter(actor, 1000)
-      } 
-      await costume.showBubble(text)
+      }
+
+      await costume.showBubble(text, 500)
       await this.clickOrKey()
-      await costume.hideBubble()
+      await costume.hideBubble(500)
     }
   }
 
-  private async executeDirective(directive: Directive): Promise<void[] | void> {
-    if(directive.command.toUpperCase() === directive.command) {
+  private displaySync(text: string, speaker: string) {
+    if (speaker === 'VOICEOVER') {
+      this.voiceover.show(text, 0);
+      this.lastText = this.voiceover
+      this.voiceover.hide(0)
+    } else {
+      let costume = speaker === this.charLeft.actorId
+        ? this.charLeft
+        : (speaker === this.charRight.actorId
+          ? this.charRight
+          : null)
+
+      if (costume === null) {
+        const actor = this.actors[speaker]
+        if (!actor) throw new Error('Unknown character: ' + speaker)
+        costume = actor.pos === 'left' ? this.charLeft : this.charRight
+        if (costume.actorId) costume.exit(0)
+        costume.enter(actor, 0)
+      }
+      costume.showBubble(text, 0)
+      costume.hideBubble(0)
+    }
+  }
+
+  private async executeDirective(directive: Directive, sync: boolean): Promise<void[] | void> {
+    if (directive.command.toUpperCase() === directive.command) {
       let actor = this.actors[directive.command]
-      if(!actor) actor = this.actors[directive.command] = new Actor(directive.command);
-      return new ActorCommand(directive, actor, this.charLeft, this.charRight).executeOperations()
+      if (!actor) actor = this.actors[directive.command] = new Actor(directive.command);
+      return new ActorCommand(directive, actor, this.charLeft, this.charRight).executeOperations(sync)
     }
     switch (directive.command) {
       case 'title':
-        return new TitleCommand(directive, this.title, this.ink.globalTags.title, this.ink.globalTags.author).executeOperations()
+        return new TitleCommand(directive, this.title, this.ink.globalTags.title, this.ink.globalTags.author).executeOperations(sync)
       case 'wait':
-        return new WaitCommand(directive).executeOperations()
+        return new WaitCommand(directive).executeOperations(sync)
       case 'scene':
-        return new SceneCommand(directive, this.background).executeOperations()
+        return new SceneCommand(directive, this).executeOperations(sync)
+      case 'characters':
+        return new CharactersCommand(directive, this.charLeft, this.charRight).executeOperations(sync)
       default:
         throw new Error('Unknown directive: ' + directive.command)
     }
   }
 
-  private async processLine(line: InkLine){
-    await Promise.all(line.directives.map(x => this.executeDirective(x)))
-    if(line.hasText){
+  private async processLine(line: InkLine) {
+    await Promise.all(line.directives.map(x => this.executeDirective(x, false)))
+    if (line.hasText) {
       await this.display(line.text, line.speaker)
     }
   }
 
-  async run(inkData: any){
-    this.ink = new Story(inkData);
+  private processLineSync(line: InkLine) {
+    line.directives.forEach(x => this.executeDirective(x, true))
+    if (line.hasText) {
+      this.displaySync(line.text, line.speaker)
+    }
+  }
 
-    await this.background.showOverlay('#000', 1)
+  async continueStory(sync: boolean = false) {
+    const raw = this.ink.story.Continue()
+    console.log(raw)
+    const line = new InkLine(raw)
+    if (sync) {
+      this.processLineSync(line)
+    } else {
+      await this.processLine(line)
+    }
+  }
+
+  persist() {
+    localStorage.setItem('ink_progress', JSON.stringify(this.currentChoices))
+  }
+
+  async run(inkData: any, choices: number[]) {
+    this.reset()
+    if (choices) {
+      this.fastForward = true
+      this.pastChoices = choices
+    }
+    this.ink = new Story(inkData);
+    this.background.fadeOut(0)
     while (this.ink.story.canContinue) {
       while (this.ink.story.canContinue) {
-        const raw = this.ink.story.Continue()
-        const line = new InkLine(raw)
-        await this.processLine(line)
+        if (this.fastForward) {
+          this.continueStory(true)
+        } else {
+          await this.continueStory()
+        }
       }
+      this.persist()
       if (this.ink.story.currentChoices.length > 0) {
-        const choice = await this.choices.getChoice(this.ink.story.currentChoices, 2000)
+        const choices = this.ink.story.currentChoices.map(x => new InkChoice(x))
+        let choice: number
+        if (this.fastForward && this.pastChoices.length > 0) {
+          choice = this.pastChoices.shift()
+        } else {
+          this.fastForward = false
+          choice = await this.choices.waitForChoice(choices, 500)
+          if(choice < 0) return choice
+        }
+        this.currentChoices.push(choice)
+        this.persist()
         this.ink.story.ChooseChoiceIndex(choice)
       } else {
-        return;
+        return 0
       }
     }
   }
@@ -426,4 +414,23 @@ function draw(t) {
 }
 requestAnimationFrame(draw)
 
-stage.run(compiledStory).catch(err => console.log(err.stack));
+async function main(){
+  const item = localStorage.getItem('ink_progress')
+  const choices = item !== undefined ? JSON.parse(item) : undefined
+  let code = 1
+  while(code !== 0){
+    if(code === -1){
+      if(stage.currentChoices.length > 0) stage.currentChoices.pop()
+      else stage.currentChoices = undefined
+      code = await stage.run(compiledStory, stage.currentChoices);
+    } else if(code === -2){
+      code = await stage.run(compiledStory, undefined);
+    } else {
+      code = await stage.run(compiledStory, choices);
+    }
+
+  }
+}
+
+main().catch(err => console.log(err.stack));
+

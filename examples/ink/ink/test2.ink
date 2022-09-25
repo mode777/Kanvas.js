@@ -2,18 +2,19 @@
 # title: Der Bildband
 
 @(KNÖDLER set img:women_02 name:'Frau Knödler' flipped:true)
-@(SCHATZ set img:man_08 name:'Herr Schatz')
+@(SCHATZ set img:man_08 name:'Herr Schatz' pos:right)
+@(LANGBEIN set img:man_03 name:'Herr Langbein')
+@(STOLZE set img:women_04 name:'Frau Stolze')
 
-@(title show time:3000)
-@(wait time:3000)
-@(title hide time:4000) @(scene fade-in img:bg_lib time:4000)
+@(title show)
+@(wait time:2000)
+@(title hide) @(scene fade-in img:bg_lib)
 
 VOICEOVER: Als Frau Knödler den Verlust bemerkte, war es wenige Minuten vor Ladenschluss. Überraschung und Verständnislosigkeit hielten sich zunächst die Waage.
 VOICEOVER: Doch je länger sie über das Geschehnis nachdachte, umso mehr geriet sie in eine Stimmung, die man allgemein als ,gerechten Zorn‘ bezeichnet.
 VOICEOVER: Und Amanda Knödler, Inhaberin der Bücherei am Kaisereck, rief Herrn Schatz an. Franz Schatz war nicht nur ihr Untermieter, sondern auch Detektiv in einer Versicherung.
 
-@(KNÖDLER enter pos:left) 
-@(SCHATZ enter pos:right) 
+@(KNÖDLER enter pos:left)
 
 * [Beruhigen] SCHATZ: Nur immer der Reihe nach, Frau Knödler! Also, wie war das?
 
@@ -44,9 +45,7 @@ VOICEOVER: Und Amanda Knödler, Inhaberin der Bücherei am Kaisereck, rief Herrn
 
 === interog
 
-@(characters exit)
-@(scene fade_out)
-@(scene fade_in img:bg_map)
+@(scene change img:bg_town)
 
 * [Herr Langbein @(pin x:0.3 y:0.3)] -> langbein
 * [Frau Stolze @(pin x:0.6 y:0.6)] -> stolze
@@ -69,9 +68,10 @@ VAR knows = 0
     LANGBEIN: Bin ich …
 + [Aufgefallen?] SCHATZ: Ist Ihnen {|vielleicht doch noch} etwas aufgefallen?
     { not knows: LANGBEIN: { Nicht das ich wüsste. Worum geht es denn bitte? | Wie gesagt: Generell ist mir nichts besonderes aufgefallen. } }
-    { knows: Verstehe. Sie wollen wissen, ob ich den Bildband gestohlen habe … Ich war es selbstverständlich nicht. Aber vielleicht sehen Sie sich einmal die Frau an, die mit mir im Laden war … Und jetzt darf ich Sie bitten zu gehen! -> interog }
+    { knows: LANGBEIN: Verstehe. Sie wollen wissen, ob ich den Bildband gestohlen habe … Ich war es selbstverständlich nicht. Aber vielleicht sehen Sie sich einmal die Frau an, die mit mir im Laden war … Und jetzt darf ich Sie bitten zu gehen! }
+    { knows: -> interog }
 * [Bildband] SCHATZ: Frau Knödler hat heute Nachmittag einen kostbaren Bildband, Wert hundertzwanzig Mark, ins Regal gestellt. Der ist verschwunden! 
-    LANGBEIN: … doch nicht etwa der dicke Bildband mit den antiken Ausgrabungen …?“   
+    LANGBEIN: … doch nicht etwa der dicke Bildband mit den antiken Ausgrabungen …?
     SCHATZ: Genau der!
     ~ knows = 1
 - -> questions
@@ -79,7 +79,11 @@ VAR knows = 0
 === stolze
 
 
-{langbein: Frau Stolze gab sich wesentlich freundlicher Sie bot Schatz sogar ein Glas Bier an. | Frau Stolze war sehr freundlich und bot Schatz ein Glas Bier an. } -> questions
+{langbein: VOICEOVER: Frau Stolze gab sich wesentlich freundlicher Sie bot Schatz sogar ein Glas Bier an. | VOICEOVER: Frau Stolze war sehr freundlich und bot Schatz ein Glas Bier an. } 
+
+@(STOLZE enter pos:left)
+
+-> questions
 
 = questions
 
@@ -94,7 +98,8 @@ VAR knows = 0
     STOLZE: Ich soll den Bildband mitgenommen haben? Nein, lieber Herr, da irren Sie sich.
 * ->
     STOLZE: Haben sie mich jetzt nicht mehr im Verdacht?
-    SCHATZ: Sicher werden Sie noch von der Sache hören, Frau Stolze. -> interog
+    SCHATZ: Sicher werden Sie noch von der Sache hören, Frau Stolze. 
+    -> interog
 
 - -> questions
 

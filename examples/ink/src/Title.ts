@@ -47,24 +47,43 @@ export class Title implements Drawable {
     ctx.textAlign = 'start';
   }
 
-  async show(title: string, subtitle = null, time = 0) {
+  private resetParams(title, subtitle){
     this.y = 0.5;
     this.titleAlpha = 0;
     this.subtitleAlpha = 0;
     this.subtitle = subtitle;
     this.title = title;
     this.underlineWidth = 0;
-    tweenValue(0, 1, time * 0.4, EaseFuncs.easeInCubic, x => this.titleAlpha = x);
-    await tweenValue(0, 0.8, time * 0.5, EaseFuncs.linear, v => this.underlineWidth = v);
-    if (this.subtitle != null) {
-      await tweenValue(this.y, this.y - 0.1, time * 0.2, EaseFuncs.easeOutCubic, v => this.y = v);
-      await tweenValue(0, 1, time * 0.3, EaseFuncs.easeInCubic, v => this.subtitleAlpha = v);
+  }
+
+  async show(title: string, subtitle = null, time = 0) {
+    this.resetParams(title,subtitle)
+    if(time === 0){
+      this.titleAlpha = 1
+      this.underlineWidth = 0.8
+    } else {
+      tweenValue(0, 1, time * 0.4, EaseFuncs.easeInCubic, x => this.titleAlpha = x);
+      await tweenValue(0, 0.8, time * 0.5, EaseFuncs.linear, v => this.underlineWidth = v);
+    }
+    if (this.subtitle) {
+      if(time === 0){
+        this.y -= 0.1
+        this.subtitleAlpha = 1
+      } else {
+        await tweenValue(this.y, this.y - 0.1, time * 0.2, EaseFuncs.easeOutCubic, v => this.y = v);
+        await tweenValue(0, 1, time * 0.3, EaseFuncs.easeInCubic, v => this.subtitleAlpha = v);
+      }
     }
   }
 
   async hide(time = 0) {
-    tweenValue(this.titleAlpha, 0, time, EaseFuncs.easeOutCubic, x => this.titleAlpha = x);
-    await tweenValue(this.subtitleAlpha, 0, time, EaseFuncs.easeOutCubic, x => this.subtitleAlpha = x);
+    if(time === 0){
+      this.titleAlpha = 0
+      this.subtitleAlpha = 0
+    } else {
+      tweenValue(this.titleAlpha, 0, time, EaseFuncs.easeOutCubic, x => this.titleAlpha = x);
+      await tweenValue(this.subtitleAlpha, 0, time, EaseFuncs.easeOutCubic, x => this.subtitleAlpha = x);
+    }
     this.title = null;
   }
 }

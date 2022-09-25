@@ -24,7 +24,7 @@ duk_ret_t js_fs_readFile(duk_context* ctx){
     const char* path = duk_require_string(ctx, 0);
     size_t size;
     unsigned char* f = SDL_LoadFile(path, &size);
-    if(f == NULL) return -1;
+    if(f == NULL) return duk_error(ctx, DUK_ERR_URI_ERROR, "File not found: %s", path);
     
     duk_push_fixed_buffer(ctx, size);
 
@@ -41,12 +41,23 @@ duk_ret_t js_fs_readText(duk_context* ctx){
     const char* path = duk_require_string(ctx, 0);
     size_t size;
     const char* f = SDL_LoadFile(path, &size);
-    if(f == NULL) return -1;
+    if(f == NULL) return duk_error(ctx, DUK_ERR_URI_ERROR, "File not found: %s", path);
     
     duk_push_lstring(ctx, f, size);
     SDL_free((void*)f);
 
     return 1;
+}
+
+duk_ret_t js_fs_writeText(duk_context* ctx){
+    const char* path = duk_require_string(ctx, 0);
+    size_t len;
+    const char* content = duk_require_lstring(ctx, 1, &len);
+    SDL_RWops* file = SDL_RWFromFile(path,"w+b");
+    SDL_RWwrite(file, content, sizeof(char), len);
+    SDL_RWclose(file);
+    //if(f == NULL) return duk_error(ctx, DUK_ERR_URI_ERROR, "File not found: %s", path);
+    return 0;
 }
 
 
@@ -69,6 +80,14 @@ duk_ret_t js_fs_open(duk_context *ctx)
     return 1;
 }
 
+duk_ret_t js_fs_createFile(duk_context* ctx){
+    const char* path = duk_require_string(ctx, 0);
+    SDL_RWops* file = SDL_RWFromFile(path, "a" );
+    SDL_RWclose(file);
+
+    return 0;
+}
+
 
 void kvs_init_fs(KVS_Context* ctx) {
     duk_context* vm = ctx->vm;
@@ -86,6 +105,12 @@ void kvs_init_fs(KVS_Context* ctx) {
 
         duk_push_c_function(vm, js_fs_readText, 1);
         duk_put_prop_string(vm, -2, "readText");
+
+        duk_push_c_function(vm, js_fs_writeText, 2);
+        duk_put_prop_string(vm, -2, "writeText");
+
+        duk_push_c_function(vm, js_fs_createFile, 1);
+        duk_put_prop_string(vm, -2, "createFile");
 
     duk_put_prop_string(vm, -2, "fs");
     duk_pop(vm);

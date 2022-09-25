@@ -129,6 +129,13 @@ void kvs_on_event(KVS_Context* ctx, SDL_Event* event){
 }
 
 int kvs_run_file(KVS_Context* ctx, const char* path){
+    // set current script-file
+    duk_push_global_object(ctx->vm);
+    duk_get_prop_string(ctx->vm, -1, "kanvas_config");
+    duk_push_string(ctx->vm, path);
+    duk_put_prop_string(ctx->vm, -2, "file");
+    duk_pop(ctx->vm);
+
     duk_context* vm = ctx->vm;
     size_t len;
     const char* source = SDL_LoadFile(path, &len);
@@ -203,6 +210,9 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
         ctx->config.retina = get_bool(vm, "retina", ctx->config.retina);  
         ctx->config.resizable = get_bool(vm, "resizable", ctx->config.resizable);  
         duk_put_prop_string(vm, -2, "kanvas_config");
+    } else {
+        duk_push_object(vm);
+        duk_put_prop_string(vm, -2, "kanvas_config");
     }
 
     int objIndex = duk_push_object(vm);
@@ -210,6 +220,7 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
     duk_put_prop_string(vm, objIndex, "log");
     duk_put_prop_string(vm, objIndex-1, "console");
 
+    // TODO: Use kanvas_config instead
     duk_push_int(vm, ctx->config.width);
     duk_put_prop_string(vm, -2, "kanvas_width");
     duk_push_int(vm, ctx->config.height);
