@@ -270,7 +270,7 @@ class Stage {
   }
 
   private async display(text: string, speaker: string) {
-    if (speaker === 'VOICEOVER') {
+    if (speaker === '') {
       await this.voiceover.show(text, 500);
       this.lastText = this.voiceover
       await this.clickOrKey()
@@ -385,7 +385,7 @@ class Stage {
           await this.continueStory()
         }
       }
-      this.persist()
+      if(!this.fastForward) this.persist()
       if (this.ink.story.currentChoices.length > 0) {
         const choices = this.ink.story.currentChoices.map(x => new InkChoice(x))
         let choice: number
@@ -393,11 +393,11 @@ class Stage {
           choice = this.pastChoices.shift()
         } else {
           this.fastForward = false
+          this.persist()
           choice = await this.choices.waitForChoice(choices, 500)
           if(choice < 0) return choice
         }
         this.currentChoices.push(choice)
-        this.persist()
         this.ink.story.ChooseChoiceIndex(choice)
       } else {
         return 0

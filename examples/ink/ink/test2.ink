@@ -10,9 +10,9 @@
 @(wait time:2000)
 @(title hide) @(scene fade-in img:bg_lib)
 
-VOICEOVER: Als Frau Knödler den Verlust bemerkte, war es wenige Minuten vor Ladenschluss. Überraschung und Verständnislosigkeit hielten sich zunächst die Waage.
-VOICEOVER: Doch je länger sie über das Geschehnis nachdachte, umso mehr geriet sie in eine Stimmung, die man allgemein als ,gerechten Zorn‘ bezeichnet.
-VOICEOVER: Und Amanda Knödler, Inhaberin der Bücherei am Kaisereck, rief Herrn Schatz an. Franz Schatz war nicht nur ihr Untermieter, sondern auch Detektiv in einer Versicherung.
+Als Frau Knödler den Verlust bemerkte, war es wenige Minuten vor Ladenschluss. Überraschung und Verständnislosigkeit hielten sich zunächst die Waage.
+Doch je länger sie über das Geschehnis nachdachte, umso mehr geriet sie in eine Stimmung, die man allgemein als ,gerechten Zorn‘ bezeichnet.
+Und Amanda Knödler, Inhaberin der Bücherei am Kaisereck, rief Herrn Schatz an. Franz Schatz war nicht nur ihr Untermieter, sondern auch Detektiv in einer Versicherung.
 
 @(KNÖDLER enter pos:left)
 
@@ -54,7 +54,7 @@ VOICEOVER: Und Amanda Knödler, Inhaberin der Bücherei am Kaisereck, rief Herrn
 
 === langbein
 
-VOICEOVER: Herr Langbein blickte misstrauisch durch den Türschlitz
+Herr Langbein blickte misstrauisch durch den Türschlitz
 
 LANGBEIN: Was wollen sie?
 
@@ -79,7 +79,7 @@ VAR knows = 0
 === stolze
 
 
-{langbein: VOICEOVER: Frau Stolze gab sich wesentlich freundlicher Sie bot Schatz sogar ein Glas Bier an. | VOICEOVER: Frau Stolze war sehr freundlich und bot Schatz ein Glas Bier an. } 
+{langbein: Frau Stolze gab sich wesentlich freundlicher Sie bot Schatz sogar ein Glas Bier an. | Frau Stolze war sehr freundlich und bot Schatz ein Glas Bier an. } 
 
 @(STOLZE enter pos:left)
 
@@ -104,8 +104,8 @@ VAR knows = 0
 - -> questions
 
 === solution
-VOICEOVER: Eine halbe Stunde später stand Herr Schatz wieder seiner Wirtin gegenüber. Und Frau Knödler war ehrlich erfreut, dass der Ausflug ihres Untermieters von Erfolg gewesen war. Und sie nahm sich vor, mit der diebischen Person ein ernstes Wörtchen zu reden.
-VOICEOVER: Wer stahl den Bildband nun wirklich?
+Eine halbe Stunde später stand Herr Schatz wieder seiner Wirtin gegenüber. Und Frau Knödler war ehrlich erfreut, dass der Ausflug ihres Untermieters von Erfolg gewesen war. Und sie nahm sich vor, mit der diebischen Person ein ernstes Wörtchen zu reden.
+Wer stahl den Bildband nun wirklich?
 
 
 
