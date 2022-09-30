@@ -67,7 +67,9 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 endif()
 
 # Add soloud
+set(SOLOUD_C_API ON CACHE BOOL "Set to ON to include the C API" FORCE)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/thirdparty/soloud/contrib)
+
 
 # Add Kanvas executable
 file(GLOB_RECURSE sources src/*.c)

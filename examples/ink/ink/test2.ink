@@ -54,6 +54,8 @@ Und Amanda Knödler, Inhaberin der Bücherei am Kaisereck, rief Herrn Schatz an.
 
 === langbein
 
+@(scene change img:bg_room)
+
 Herr Langbein blickte misstrauisch durch den Türschlitz
 
 LANGBEIN: Was wollen sie?
@@ -78,6 +80,7 @@ VAR knows = 0
 
 === stolze
 
+@(scene change img:bg_kitchen)
 
 {langbein: Frau Stolze gab sich wesentlich freundlicher Sie bot Schatz sogar ein Glas Bier an. | Frau Stolze war sehr freundlich und bot Schatz ein Glas Bier an. } 
 
@@ -106,9 +109,6 @@ VAR knows = 0
 === solution
 Eine halbe Stunde später stand Herr Schatz wieder seiner Wirtin gegenüber. Und Frau Knödler war ehrlich erfreut, dass der Ausflug ihres Untermieters von Erfolg gewesen war. Und sie nahm sich vor, mit der diebischen Person ein ernstes Wörtchen zu reden.
 Wer stahl den Bildband nun wirklich?
-
-
-
 
 --> END
 
