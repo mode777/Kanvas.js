@@ -228,3 +228,124 @@ class Storage {
 }
 
 (<any>window).localStorage = new Storage();
+
+interface AudioSource {
+  setRepeat(value: boolean)
+  getRepeat(): boolean
+  getVolume(): number
+  setVolume(value: number)
+  load(path: string)
+  play() 
+  isPlaying(): boolean
+}
+
+abstract class WavBase implements AudioSource {
+  public _ptr: any;
+  protected _playHandle: number = -1
+  protected _repeat: boolean;
+  public getRepeat(): boolean {
+    return this._repeat;
+  }
+  public setRepeat(value: boolean) {
+    this._repeat = value;
+  }
+  protected _volume: number;
+  public getVolume(): number {
+    return this._volume;
+  }
+  public setVolume(value: number) {
+    this._volume = value;
+  }
+  abstract load(path: string);
+  play() {    
+    this._playHandle = soloud.play(this._ptr)
+  }
+  isPlaying(){
+    if(this._playHandle === -1) return false;
+    return soloud.isPlaying(this._playHandle)
+  }
+}
+
+class Wav extends WavBase {
+  constructor(){
+    super()
+    this._ptr = soloud.wav_create()
+  }
+  public setRepeat(value: boolean) {
+    soloud.wav_repeat(this._ptr, value)
+    super.setRepeat(value);
+  }
+  public setVolume(value: number) {
+    soloud.wav_volume(this._ptr, value)
+    super.setVolume(value);
+  }
+  load(path: string) {
+    soloud.wav_load(this._ptr, path)
+  }
+}
+Duktape.fin(Wav.prototype, function(x: Wav){
+  soloud.wav_destroy(x._ptr)
+})
+
+class WavStream extends WavBase {
+  constructor(){
+    super()
+    this._ptr = soloud.wavstream_create()
+  }
+  public setRepeat(value: boolean) {
+    soloud.wavstream_repeat(this._ptr, value)
+    super.setRepeat(value);
+  }
+  public setVolume(value: number) {
+    soloud.wavstream_volume(this._ptr, value)
+    super.setVolume(value);
+  }
+  load(path: string) {
+    soloud.wavstream_load(this._ptr, path)
+  }
+}
+Duktape.fin(WavStream.prototype, function(x: Wav){
+  soloud.wavstream_destroy(x._ptr)
+})
+
+class Audio {
+  private _source: AudioSource
+  private _repeat: boolean;
+  public get repeat(): boolean {
+    return this._repeat;
+  }
+  public set repeat(value: boolean) {
+    this._repeat = value;
+  }
+  private _src: string;
+  public get src(): string {
+    return this._src;
+  }
+  public set src(value: string) {
+    this._src = value;
+  }
+  private _preload: string;
+  public get preload(): string {
+    return this._preload;
+  }
+  public set preload(value: string) {
+    this._preload = value;
+  }
+  constructor(filename?: string){
+    this.src = filename
+  }
+
+  play(){
+    if(!this._source){
+      if(!this._src) return
+      this._source = this.preload !== 'auto' ? new WavStream() : new Wav()
+      this._source.load(this._src)
+    }
+    //if(this._playHandle !== null) console.log(soloud.isPlaying(this._playHandle))
+    //this._playHandle = this._source.play()
+    if(!this._source.isPlaying()) this._source.play()
+    //console.log(this._playHandle)
+  }
+}
+
+(<any>window).Audio = Audio;

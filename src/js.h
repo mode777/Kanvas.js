@@ -4,6 +4,7 @@
 
 #include <duktape.h>
 #include <SDL.h>
+#include <soloud_c.h>
 
 #define KVS_STRING_PROP(K,V) duk_push_string(vm,V);duk_put_prop_string(vm,-2,K)
 #define KVS_STRING_INDEX(K,V) duk_push_string(vm,V);duk_put_prop_index(vm,-2,K)
@@ -24,6 +25,7 @@ typedef struct {
     SDL_GLContext* context;
     duk_context* vm;
     KVS_Config config;
+    Soloud* soloud;
 } KVS_Context;
 
 typedef enum{
@@ -51,5 +53,7 @@ void kvs_init_keys();
 const char* kvs_get_key(SDL_Keycode sym);
 
 void kvs_init_fs(KVS_Context* ctx);
+
+void kvs_init_audio(KVS_Context* ctx);
 
 #endif

@@ -66,13 +66,18 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
   )
 endif()
 
+# Add soloud
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/thirdparty/soloud/contrib)
+
 # Add Kanvas executable
 file(GLOB_RECURSE sources src/*.c)
 file(GLOB_RECURSE headers src/*.h)
 
 add_executable(kanvas ${headers} ${sources})
+# TODO: not a very nice hack, fixme
+target_include_directories(kanvas PUBLIC thirdparty/soloud/include)
 
-target_link_libraries(kanvas PRIVATE EGL::EGL OpenGLES2::OpenGLES2 SDL2::Main nanovg duktape stb)
+target_link_libraries(kanvas PRIVATE EGL::EGL OpenGLES2::OpenGLES2 SDL2::Main nanovg duktape stb soloud)
 
 # Needed by SDL for console by mingw
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND WIN32)

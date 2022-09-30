@@ -22,6 +22,7 @@ export class LazyImage {
     }
   }
   loadImage(name: string) {
+    if(!name) return
     const prom = this._promise = DrawUtils.loadImage(`assets/png/${name}.png`);
     prom.then(x => {
       if (prom === this._promise)

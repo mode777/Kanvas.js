@@ -78,3 +78,9 @@ function loop(time){
 }
 
 requestAnimationFrame(loop);
+
+var wav = new Audio()
+wav.src = 'assets/audio/bgm/mystical_theme.mp3'
+wav.preload = true
+wav.play()
+

@@ -13,6 +13,7 @@ import { Actor } from './Actor';
 import { Choices } from './Choices';
 import { InkChoice } from './InkChoice';
 import { StatePatch } from 'inkjs/engine/StatePatch';
+import { EaseFuncs, tweenValue } from './easing';
 
 export const canvas = window['kanvas'] ?? <HTMLCanvasElement>document.getElementById('canvas')
 
@@ -146,6 +147,10 @@ class ActorCommand extends Command {
 
 class WaitCommand extends Command {
 
+  constructor(directive: Directive, private canvas: HTMLCanvasElement){
+    super(directive)
+  }
+
   protected loadParameters() {
     this.tryConvertParameter('seconds', v => parseFloat(v))
     this.tryConvertParameter('time', v => parseInt(v))
@@ -155,8 +160,15 @@ class WaitCommand extends Command {
     return { time: 1000 }
   }
   protected executeOperation(name: string, parameters: any, sync: boolean): Promise<void> {
+    switch (name) {
+      case 'default':
+        return TimeUtils.wait(parameters.time)
+      case 'click':
+        return <any>InputUtils.waitClick(this.canvas)
+      default:
+        throw new Error('Invalid operation "'+name+'"')
+    }
     if (sync) return;
-    return TimeUtils.wait(parameters.time)
   }
 }
 
@@ -269,12 +281,12 @@ class Stage {
     return Promise.race([InputUtils.waitClick(this.canvas), InputUtils.waitKey()])
   }
 
-  private async display(text: string, speaker: string) {
+  private async display(text: string, speaker: string, sync = false) {
     if (speaker === '') {
-      await this.voiceover.show(text, 500);
+      sync ? this.voiceover.show(text, 0) : await this.voiceover.show(text, 500);
       this.lastText = this.voiceover
-      await this.clickOrKey()
-      await this.voiceover.hide(500)
+      if(!sync) await this.clickOrKey()
+      sync ? this.voiceover.hide(0) : await this.voiceover.hide(500)
     } else {
       let costume = speaker === this.charLeft.actorId
         ? this.charLeft
@@ -284,39 +296,15 @@ class Stage {
 
       if (costume === null) {
         const actor = this.actors[speaker]
-        if (!actor) throw new Error('Unknown character: ' + speaker)
+        if (!actor) throw new Error('Unknown character: "' + speaker + '"')
         costume = actor.pos === 'left' ? this.charLeft : this.charRight
-        if (costume.actorId) await costume.exit(1000)
-        await costume.enter(actor, 1000)
+        if (costume.actorId) sync ? costume.exit(0) : await costume.exit(1000)
+        sync ? costume.enter(actor, 0) : await costume.enter(actor, 1000)
       }
 
-      await costume.showBubble(text, 500)
-      await this.clickOrKey()
-      await costume.hideBubble(500)
-    }
-  }
-
-  private displaySync(text: string, speaker: string) {
-    if (speaker === 'VOICEOVER') {
-      this.voiceover.show(text, 0);
-      this.lastText = this.voiceover
-      this.voiceover.hide(0)
-    } else {
-      let costume = speaker === this.charLeft.actorId
-        ? this.charLeft
-        : (speaker === this.charRight.actorId
-          ? this.charRight
-          : null)
-
-      if (costume === null) {
-        const actor = this.actors[speaker]
-        if (!actor) throw new Error('Unknown character: ' + speaker)
-        costume = actor.pos === 'left' ? this.charLeft : this.charRight
-        if (costume.actorId) costume.exit(0)
-        costume.enter(actor, 0)
-      }
-      costume.showBubble(text, 0)
-      costume.hideBubble(0)
+      sync ? costume.showBubble(text,0) : await costume.showBubble(text, 500)
+      if(!sync) await this.clickOrKey()
+      sync ? costume.hideBubble(0) : await costume.hideBubble(500)
     }
   }
 
@@ -330,7 +318,7 @@ class Stage {
       case 'title':
         return new TitleCommand(directive, this.title, this.ink.globalTags.title, this.ink.globalTags.author).executeOperations(sync)
       case 'wait':
-        return new WaitCommand(directive).executeOperations(sync)
+        return new WaitCommand(directive, this.canvas).executeOperations(sync)
       case 'scene':
         return new SceneCommand(directive, this).executeOperations(sync)
       case 'characters':
@@ -340,29 +328,20 @@ class Stage {
     }
   }
 
-  private async processLine(line: InkLine) {
-    await Promise.all(line.directives.map(x => this.executeDirective(x, false)))
+  private async processLine(line: InkLine, sync = false) {
+    sync 
+      ? line.directives.forEach(x => this.executeDirective(x, true))
+      : await Promise.all(line.directives.map(x => this.executeDirective(x, false)))
     if (line.hasText) {
-      await this.display(line.text, line.speaker)
+      sync ? this.display(line.text, line.speaker, true) : await this.display(line.text, line.speaker)
     }
   }
 
-  private processLineSync(line: InkLine) {
-    line.directives.forEach(x => this.executeDirective(x, true))
-    if (line.hasText) {
-      this.displaySync(line.text, line.speaker)
-    }
-  }
-
-  async continueStory(sync: boolean = false) {
+  async continueStory(sync = false) {
     const raw = this.ink.story.Continue()
     console.log(raw)
     const line = new InkLine(raw)
-    if (sync) {
-      this.processLineSync(line)
-    } else {
-      await this.processLine(line)
-    }
+    sync ? this.processLine(line,true) : await this.processLine(line)
   }
 
   persist() {
@@ -379,11 +358,7 @@ class Stage {
     this.background.fadeOut(0)
     while (this.ink.story.canContinue) {
       while (this.ink.story.canContinue) {
-        if (this.fastForward) {
-          this.continueStory(true)
-        } else {
-          await this.continueStory()
-        }
+        this.fastForward ? this.continueStory(true) : await this.continueStory()
       }
       if(!this.fastForward) this.persist()
       if (this.ink.story.currentChoices.length > 0) {
@@ -433,4 +408,82 @@ async function main(){
 }
 
 main().catch(err => console.log(err.stack));
+
+class AudioPlayer {
+
+  private bgmEl = new Audio()
+  private sfx1 = new Audio()
+
+  constructor(){
+    this.sfx1.src = 'assets/audio/sfx/cardShuffle.ogg'
+    this.sfx1.preload = 'auto'
+  }
+
+  async playBgm(url){
+    this.bgmEl.src = url
+    this.bgmEl.play()
+    await this.fadeInBgm()
+    this.sfx1.play()
+  }
+
+  async fadeInBgm(){
+    await tweenValue(0,1,5000,EaseFuncs.linear,x => this.bgmEl.volume = x)
+  }
+}
+
+const a = new Audio('assets/audio/sfx/cardShuffle.ogg')
+a.preload = 'auto'
+
+const clickHandler = async () => {
+  //canvas.removeEventListener('click', clickHandler)
+  //const player = new AudioPlayer()
+  //player.playBgm('assets/audio/bgm/mystical_theme.mp3')
+  a.play()
+}
+canvas.addEventListener('click', clickHandler)
+
+// class AudioSystem {
+//   private audioCtx: AudioContext
+//   private _bgm: string;
+//   private _bgmBuffer: AudioBuffer
+//   public get bgm(): string {
+//     return this._bgm;
+//   }
+//   public set bgm(value: string) {
+//     this._bgm = value;
+//     this._bgmBuffer = null
+//   }
+
+//   constructor(private canvas: HTMLCanvasElement){
+    
+//   }
+
+//   async init(){
+
+//     if(this._bgm && !this._bgmBuffer){
+//       this._bgmBuffer = await this.getFile(this._bgm)
+//     }
+//     this.playTrack(this._bgmBuffer)
+//   }
+
+//   playTrack(audioBuffer) {
+//     const trackSource = new AudioBufferSourceNode(this.audioCtx, {
+//       buffer: audioBuffer,
+//     });
+//     trackSource.connect(this.audioCtx.destination);
+//     trackSource.loop = true
+//     trackSource.start();
+//     //this.audioCtx.resume()
+//   }
+
+//   async getFile(filepath) {
+//     const response = await fetch(filepath);
+//     const arrayBuffer = await response.arrayBuffer();
+//     const audioBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
+//     return audioBuffer;
+//   }
+// }
+
+// const audio = new AudioSystem(canvas)
+// audio.bgm = 'assets/audio/bgm/mystical_theme.mp3'
 

@@ -5,3 +5,6 @@
 	path = thirdparty/duktape
 	url = https://github.com/svaarala/duktape.git
 	branch = tags/v2.7.0
+[submodule "thirdparty/soloud"]
+	path = thirdparty/soloud
+	url = https://github.com/jarikomppa/soloud.git

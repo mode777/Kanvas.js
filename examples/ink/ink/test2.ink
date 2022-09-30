@@ -7,7 +7,7 @@
 @(STOLZE set img:women_04 name:'Frau Stolze')
 
 @(title show)
-@(wait time:2000)
+@(wait click)
 @(title hide) @(scene fade-in img:bg_lib)
 
 Als Frau Knödler den Verlust bemerkte, war es wenige Minuten vor Ladenschluss. Überraschung und Verständnislosigkeit hielten sich zunächst die Waage.

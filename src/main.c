@@ -7,6 +7,7 @@
 #include <GLES2/gl2.h>
 //#include <EGL/egl.h>
 #include <duktape.h>
+#include <soloud_c.h>
 
 #include "js.h"
 
@@ -27,6 +28,7 @@ static void init(){
   //printf("c: %d\n",duk_get_top_index(ctx.vm));
   kvs_init_vg(&ctx);
   //printf("d: %d\n",duk_get_top_index(ctx.vm));
+  kvs_init_audio(&ctx);
 
   kvs_run_file(&ctx, "./polyfills.js");
   //printf("e: %d\n",duk_get_top_index(ctx.vm));
@@ -75,6 +77,18 @@ static void update(){
 }
 
 int main(int argc, char *argv[]) {
+
+  // Wav* wav = Wav_create();
+  // Wav_load(wav, "assets/audio/sfx/cardShuffle.ogg");
+
+  // WavStream* wav2 = WavStream_create();
+  // WavStream_load(wav2, "assets/audio/bgm/mystical_theme.mp3");
+  
+  // Soloud_setGlobalVolume(soloud, 4);
+  // Soloud_play(soloud, wav);
+  // Soloud_play(soloud, wav2);
+
+
   _argc = argc;
   for (size_t i = 0; i < argc; i++)
   {
@@ -91,6 +105,10 @@ int main(int argc, char *argv[]) {
   SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+  ctx.soloud = Soloud_create();
+  Soloud_initEx(ctx.soloud, SOLOUD_CLIP_ROUNDOFF | SOLOUD_ENABLE_VISUALIZATION, 
+                SOLOUD_AUTO, SOLOUD_AUTO, SOLOUD_AUTO, SOLOUD_AUTO);
 
   init();  
 
