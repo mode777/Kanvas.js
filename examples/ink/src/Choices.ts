@@ -19,6 +19,7 @@ export class Choices implements Drawable {
   async waitForChoice(choices: InkChoice[], time = 0) {
     this.options = choices.map(x => new Option(this.canvas, x.index, x.text));
     this.options.push(new Option(this.canvas, -1, "<< BACK"))
+    this.options.push(new Option(this.canvas, -2, "<< RESTART"))
     let x = 0.5;
     let y = 0.66;
     let observer: (number) => void;

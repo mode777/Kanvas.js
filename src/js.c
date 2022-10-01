@@ -155,7 +155,7 @@ int kvs_run_file(KVS_Context* ctx, const char* path){
         }
     }
     duk_pop(vm);
-
+    kvs_run_task_queue(ctx);
     SDL_free((void*)source);
     return result;
 }

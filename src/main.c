@@ -68,8 +68,8 @@ static void update(){
           break;
       }
       kvs_on_event(&ctx, &event);
+      kvs_run_task_queue(&ctx);
     }
-    kvs_run_task_queue(&ctx);
 
     bool running;
 

@@ -827,6 +827,7 @@ void kvs_on_render(KVS_Context* ctx)
         {
             kvs_print_error(ctx, KVS_RUNTIME);
         }
+        kvs_run_task_queue(ctx);
         nvgEndFrame(vg);
         
         SDL_Window* win = SDL_GL_GetCurrentWindow();

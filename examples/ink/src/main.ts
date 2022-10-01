@@ -12,7 +12,6 @@ import { Directive } from './Directive';
 import { Actor } from './Actor';
 import { Choices } from './Choices';
 import { InkChoice } from './InkChoice';
-import { StatePatch } from 'inkjs/engine/StatePatch';
 import { EaseFuncs, tweenValue } from './easing';
 
 export const canvas = window['kanvas'] ?? <HTMLCanvasElement>document.getElementById('canvas')
@@ -409,28 +408,6 @@ async function main(){
 
 main().catch(err => console.log(err.stack));
 
-class AudioPlayer {
-
-  private bgmEl = new Audio()
-  private sfx1 = new Audio()
-
-  constructor(){
-    this.sfx1.src = 'assets/audio/sfx/cardShuffle.ogg'
-    this.sfx1.preload = 'auto'
-  }
-
-  async playBgm(url){
-    this.bgmEl.src = url
-    this.bgmEl.play()
-    await this.fadeInBgm()
-    this.sfx1.play()
-  }
-
-  async fadeInBgm(){
-    await tweenValue(0,1,5000,EaseFuncs.linear,x => this.bgmEl.volume = x)
-  }
-}
-
 const a = new Audio('assets/audio/sfx/cardShuffle.ogg')
 a.preload = 'auto'
 
@@ -438,7 +415,7 @@ const clickHandler = async () => {
   //canvas.removeEventListener('click', clickHandler)
   //const player = new AudioPlayer()
   //player.playBgm('assets/audio/bgm/mystical_theme.mp3')
-  a.play()
+  //a.play()
 }
 canvas.addEventListener('click', clickHandler)
 

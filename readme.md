@@ -75,22 +75,149 @@ Kanvas is based on Duktape and therefore mostly supports ES5. It is recommended 
 
 > Kanvas pre-loads a polyfill (`core-js`) for ES6 primitives like `Promise`, `Map`, `Set` etc..So you don't have to polyfill them yourself.
 
-### RenderingContext2d (Canvas)
+### Quick note about Promises
 
-Not much support here yet, as this project just started. Most of it should be fairly easy to implement due to NanoVGs similarity to HTML canvas.
+Promises should run as microtasks after synchronous code finishes. Kanvas emulates this behaviour by manually running the task queue after the following occasions
+
+ * After running a Javascript file
+ * After an event handler finishes execution
+ * After running an animation frame
+
+### Supported browser APIs 
+
+As mentioned above, Kanvas only supports a small set or browser APIs. Just enough to keep browser compatibility. Instead of listing, what is supported, it makes more sense to show how to do stuff.
+
+**Canvas**
+
+Kanvas has a global singleton instance of a HTMLCanvasElement called `kanvas`
+```javascript
+var canvas = window["kanvas"] ? window["kanvas"] : document.getElementById("canvas")
+
+console.log(canvas.width, canvas.height)
+```
+
+**Events**
+
+Events can be received either through the global `kanvas` object or the global `window` object. Not all properties are implemented.
+Events are dispatched from the main loop which tries to maintain 60 frames per second.
+```javascript
+function onmove(ev){
+  console.log(ev.offsetX, ev.offsetY)
+}
+
+function onkey(ev){
+  console.log(ev.key)
+}
+
+kanvas.addEventListener('mousemove', onmove)
+window.addEventListener('keydown', onkey)
+
+// ...
+
+kanvas.removeEventListener('mousemove', onmove)
+kanvas.removeEventListener('keydown', onkey)
+```
+
+|Event|Dispatched on|Properties 
+|---|---|---|
+|mousemove|kanvas|type,offsetX,offsetY|
+|mousedown|kanvas|type,offsetX,offsetY,button|
+|mouseup|kanvas|type,offsetX,offsetY,button|
+|click|kanvas|type,offsetX,offsetY,button|
+|keyup|window|type,repeat,altKey,ctrlKey,key|
+|keydown|window|type,repeat,altKey,ctrlKey,key|
+
+**Animation Frame**
+
+`requestAnimationFrame` works just like in the browser.
+```javascript
+// run a render loop
+function loop(time){
+  // do your rendering here
+  requestAnimationFrame(loop)
+}
+requestAnimationFrame(loop)
+```
+
+**Local Storage**
+
+There is basic support for local storage APIs but not session storage (as there is no concept of a session). Data is stored in the CWD (subject to change) as `{js_filename}.storage` file.
+```javascript
+localStorage.setItem('my key', 'my value')
+
+// later...
+
+localStorage.getItem('my key')
+localStorage.removeItem('my key')
+localStorage.clear()
+```
+
+**Fetch**
+
+There is some basic fetch support but only for local files. There is no HTTP client (yet). Also fetch calls return a Promise but are not really asynchronous under the hood.
+```javascript
+fetch('myfile').then(function(response){
+  response.arrayBuffer(function(mybuffer) { })
+  response.text(function(mytext) { })
+  response.blob(function(myblob) {
+    // blob only supports array buffer
+    myblob.arrayBuffer.then(function(mybuffer) { })
+  })
+})
+```
+
+**Image Bitmap**
+
+Currently `ImageBitmap` is the only supported source for drawing images. There is currently only one way to create it.
+```javascript
+fetch('myimage.png').then(function(response){
+  response.blob().then(function(blob){
+    createImageBitmap(blob).then(function(image){
+      // use image for drawing
+    })
+  })
+})
+```
+If you can use `async/await` it becomes a bit easier
+```javascript
+async function loadImage(file: string){
+  return await createImageBitmap(await (await fetch(file)).blob());
+}
+```
+
+**Audio**
+
+Audio is supported through the `Audio` constructor. You can control weather audio is streamed or not through the `preload` attribute.
+```javascript
+var audio = new Audio()
+audio.src = 'myaudio.mp3'
+audio.preload = 'auto'
+// full audio is loaded into memory e.g. for sound effects
+audio.play()
+
+var audio2 = new Audio('myaudio.ogg')
+// audio is streamed from disk e.g. for BG music
+audio2.play()
+```
+
+
+
+### RenderingContext2d
+
+Not full support here yet. Some of it should be fairly easy to implement due to NanoVGs similarity to HTML canvas, some of it will probably not be supported ever.
 
 |API|Support| 
 |---|---|
-|globalAlpha|       no|
-|drawImage|         no|
+|globalAlpha|       yes|
+|drawImage|         partial (only `ImageBitmap` supported for now)|
 |beginPath|         yes|
 |clip|              no|
 |fill|              yes|
 |isPointInPath|     no|
 |isPointInStroke|   no|
-|stroke|            no|
+|stroke|            yes|
 |fillStyle|         partial (only solid colors)|
-|strokeStyle|       no|
+|strokeStyle|       partial (only solid colors)|
 |createConicGradient|no|
 |createLinearGradient|no|
 |createPattern|     no|
@@ -126,15 +253,15 @@ Not much support here yet, as this project just started. Most of it should be fa
 |restore|           no|
 |save|              no|
 |fillText|          yes|
-|measureText|       no|
+|measureText|       yes|
 |strokeText|        no|
 |direction|         no|
 |font|              yes|
-|textAlign|         no|
-|textBaseline|      no|
+|textAlign|         yes|
+|textBaseline|      yes|
 |resetTransform|    yes|
-|rotate|            no|
-|scale|             no|
+|rotate|            yes|
+|scale|             yes|
 |setTransform|      no|
 |transform|         no|
 |translate|         yes|
@@ -142,19 +269,19 @@ Not much support here yet, as this project just started. Most of it should be fa
 |canvas|            yes (returns window.kanvas)|
 |getContextAttributes|yes (empty)|
 
-
 ## Building
 
 Kanvas uses CMake for building.
 
 ### Dependencies
 
-* SDL2
-* ANGLE (On Desktop platforms)
+* SDL2 
+* ANGLE (EGL / OpenGL ES 2 implementation on desktop platforms)
 
-Static dependencies (create on bulld)
-* duktape
-* nanovg
+Static dependencies (created on build)
+* duktape (JS interpreter)
+* nanovg (2d drawing)
+* soloud (audio)
 
 ### Instructions
 
