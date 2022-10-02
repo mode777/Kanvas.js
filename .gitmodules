@@ -8,3 +8,6 @@
 [submodule "thirdparty/soloud"]
 	path = thirdparty/soloud
 	url = https://github.com/jarikomppa/soloud.git
+[submodule "examples/ink"]
+	path = examples/ink
+	url = https://github.com/mode777/Inkx.git
