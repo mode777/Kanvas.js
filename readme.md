@@ -161,7 +161,7 @@ fetch('myfile').then(function(response){
   response.text(function(mytext) { })
   response.blob(function(myblob) {
     // blob only supports array buffer
-    myblob.arrayBuffer.then(function(mybuffer) { })
+    myblob.arrayBuffer().then(function(mybuffer) { })
   })
 })
 ```
@@ -199,8 +199,6 @@ var audio2 = new Audio('myaudio.ogg')
 // audio is streamed from disk e.g. for BG music
 audio2.play()
 ```
-
-
 
 ### RenderingContext2d
 
@@ -268,6 +266,32 @@ Not full support here yet. Some of it should be fairly easy to implement due to 
 |drawFocusIfNeeded| no|
 |canvas|            yes (returns window.kanvas)|
 |getContextAttributes|yes (empty)|
+
+### Window and Font handling
+
+As Kanvas exists in a space without a DOM or CSS, relevant attributes must be configured through `kanvas.json`. Here's an example:
+
+```json
+{
+    "width": 1280,
+    "height": 720,
+    "retina": true,
+    "title": "Kanvas!", 
+    "resizable": true,
+    "fonts": {
+        "sans-serif": "assets/fonts/Roboto/Roboto-Regular.ttf",
+        "sans-serif:bold": "assets/fonts/Roboto/Roboto-Bold.ttf",
+        "sans-serif:italic": "assets/fonts/Roboto/Roboto-Italic.ttf",
+        "sans-serif:bold:italic": "assets/fonts/Roboto/Roboto-BoldItalic.ttf",
+        "serif": "assets/fonts/NotoSerif/NotoSerif-Regular.ttf",
+        "serif:bold": "assets/fonts/NotoSerif/NotoSerif-Bold.ttf",
+        "serif:italic": "assets/fonts/NotoSerif/NotoSerif-Italic.ttf",
+        "serif:bold:italic": "assets/fonts/NotoSerif/NotoSerif-BoldItalic.ttf",
+        "Neucha": "assets/fonts/Neucha/Neucha-Regular.ttf",
+        "PatrickHand": "assets/fonts/Patrick_Hand/PatrickHand-Regular.ttf"
+    }
+}
+```
 
 ## Building
 
