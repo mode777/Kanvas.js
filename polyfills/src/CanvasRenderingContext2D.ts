@@ -2,9 +2,9 @@ import { Path2D } from "./Path2d";
 import * as RGBColor from 'rgbcolor'
 
 export class CanvasRenderingContext2D {
-  constructor(config){
+  constructor(){
     this.fillStyle = "#000"
-    this.faces = config.fonts
+    this.faces = kanvas_config.fonts
   }
   private _globalAlpha: number = 1;
   public get globalAlpha(): number {

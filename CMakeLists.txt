@@ -11,6 +11,7 @@ message("Building for ${TARGET_ARCH}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
+#stb libs
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stb)
 
@@ -70,6 +71,9 @@ endif()
 set(SOLOUD_C_API ON CACHE BOOL "Set to ON to include the C API" FORCE)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/thirdparty/soloud/contrib)
 
+# Add duktape webgl bindings
+add_library(dukwebgl INTERFACE)
+target_include_directories(dukwebgl INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/dukwebgl)
 
 # Add Kanvas executable
 file(GLOB_RECURSE sources src/*.c)
@@ -79,7 +83,7 @@ add_executable(kanvas ${headers} ${sources})
 # TODO: not a very nice hack, fixme
 target_include_directories(kanvas PUBLIC thirdparty/soloud/include)
 
-target_link_libraries(kanvas PRIVATE EGL::EGL OpenGLES2::OpenGLES2 SDL2::Main nanovg duktape stb soloud)
+target_link_libraries(kanvas PRIVATE EGL::EGL OpenGLES2::OpenGLES2 SDL2::Main nanovg duktape stb soloud dukwebgl)
 
 # Needed by SDL for console by mingw
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND WIN32)

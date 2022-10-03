@@ -26,7 +26,7 @@ static void init(){
   //printf("b: %d\n",duk_get_top_index(ctx.vm));
   kvs_init_fs(&ctx);
   //printf("c: %d\n",duk_get_top_index(ctx.vm));
-  kvs_init_vg(&ctx);
+  //kvs_nanovg_init(&ctx);
   //printf("d: %d\n",duk_get_top_index(ctx.vm));
   kvs_init_audio(&ctx);
 
@@ -45,7 +45,7 @@ static void init(){
 
 static void dispose(){
   kvs_dispose(&ctx);
-  kvs_nanovg_dispose();
+  //kvs_nanovg_dispose();
 }
 
 static void reset(){

@@ -10,6 +10,8 @@
 
 #include "js.h"
 
+static KVS_Context* kvs;
+
 static inline int get_int(duk_context* vm, const char* key, int def){
     duk_get_prop_string(vm, -1, key);
     int v = duk_get_int_default(vm, -1, def);
@@ -194,7 +196,21 @@ static duk_ret_t js_print(duk_context *ctx) {
     return 0;
 }
 
+static duk_ret_t kanvas_set_mode(duk_context *ctx) {
+    const char* mode = duk_require_string(ctx,0);
+    // if(kvs->mode != KVS_MODE_NONE){
+    //     return duk_error(ctx, DUK_ERR_ERROR, "Kanvas context was already created");
+    // }
+    if(strcmp(mode,"2d") == 0){        
+        kvs->mode = KVS_MODE_2D;
+    } else if(strcmp(mode,"webgl") == 0){
+        kvs->mode = KVS_MODE_WEBGL;
+    }
+    return 0;
+}
+
 void kvs_init(KVS_Context* ctx, const char* configFile) {
+    kvs = ctx;
     duk_context* vm = duk_create_heap(NULL, NULL, NULL, NULL, my_fatal);
     assert(vm != NULL);
     ctx->vm = vm;
@@ -203,6 +219,7 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
     ctx->config = cfg;
     
     duk_push_global_object(vm);
+
     if(configFile != NULL && kvs_decode_json(ctx, configFile) == 0){
         ctx->config.width = get_int(vm, "width", ctx->config.width);  
         ctx->config.height = get_int(vm, "height", ctx->config.height);
@@ -215,9 +232,14 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
         duk_put_prop_string(vm, -2, "kanvas_config");
     }
 
+    duk_push_c_function(vm, kanvas_set_mode, 1);
+    duk_put_prop_string(vm, -2, "kanvas_set_mode");
+
     int objIndex = duk_push_object(vm);
     duk_push_c_function(vm, js_print, DUK_VARARGS);
     duk_put_prop_string(vm, objIndex, "log");
+    duk_push_c_function(vm, js_print, DUK_VARARGS);
+    duk_put_prop_string(vm, objIndex, "warn");
     duk_put_prop_string(vm, objIndex-1, "console");
 
     // TODO: Use kanvas_config instead
@@ -233,12 +255,17 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
     ctx->context = SDL_GL_CreateContext(ctx->window);
     assert(ctx->context != NULL);
     SDL_GL_SetSwapInterval(0);
+
+    kvs_nanovg_init(kvs);
+    kvs_webgl_init(kvs);
 }
 
 void kvs_dispose(KVS_Context* ctx){
+    duk_destroy_heap(ctx->vm);
+    kvs_nanovg_dispose(ctx->mode);
+    ctx->mode = KVS_MODE_NONE;
     SDL_GL_DeleteContext(ctx->context);
     SDL_DestroyWindow(ctx->window);
-    duk_destroy_heap(ctx->vm);
 }
 
 void kvs_run_task_queue(KVS_Context* ctx){

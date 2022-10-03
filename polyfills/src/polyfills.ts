@@ -46,7 +46,17 @@ class Kanvas {
   public readonly height = (<any>window).kanvas_height;
 
   getContext(id) {
-    return new CanvasRenderingContext2D(kanvas_config ?? {})
+    console.log(`Context requested for ${id}`)
+    if(id === '2d'){
+      kanvas_set_mode('2d')
+      return new CanvasRenderingContext2D()
+    } else if(id == 'webgl'){
+      kanvas_set_mode('webgl')
+      const ctx = new WebGLRenderingContext();
+      (<any>ctx).canvas = kanvas
+      return ctx;
+    }
+    return null;
   }
   private ensureListener(name) {
     if (!this.listeners[name]) {
@@ -80,22 +90,48 @@ class Kanvas {
   }
 }
 
+let currentTime = 0
+interface Timeout {
+  fn: () => void
+  time: number
+  id: number
+}
+
+const timeouts: Timeout[] = [];
+let toid = 0
 const animationFrames = [];
+
+function setTimeout(fn,time) {
+  console.log(fn,time)
+  const to = {fn,time: time+currentTime,id:toid++}
+  timeouts.push(to)
+  return toid
+}
 
 function requestAnimationFrame(fn) {
   animationFrames.push(fn)
 }
 
 window["onrender"] = function (time) {
+  currentTime = time
   const length = animationFrames.length;
   for (let i = 0; i < length; i++) {
     const frame = animationFrames.shift();
     frame(time)
   }
+  const tolen = timeouts.length;
+  for (let i = tolen-1; i >= 0; i--) {
+    const to = timeouts[i]
+    if(to.time >= time){
+      timeouts.splice(i,1);
+      to.fn()
+    }    
+  }
 };
 
 (<any>window).kanvas = new Kanvas();
 (<any>window).requestAnimationFrame = requestAnimationFrame;
+(<any>window).setTimeout = setTimeout;
 
 (<any>window).dispatchEvent = (ev) => {
   window.kanvas.dispatchEvent(ev)
@@ -155,6 +191,9 @@ class Response {
   }
   blob() {
     return Promise.resolve(new Blob(fs.readFile(this.path)))
+  }
+  json() {
+    return Promise.resolve(JSON.parse(fs.readText(this.path)))
   }
 }
 
@@ -349,3 +388,33 @@ class Audio {
 }
 
 (<any>window).Audio = Audio;
+
+let wasCanvasCreated = false;
+(<any>window).document = {
+  addEventListener: (name,cb) => {
+    kanvas.addEventListener.apply(kanvas, [name, cb]);
+  },
+  createElement: (name,options) => {
+    console.log(`Create element ${name}`)
+    switch(name){
+      case 'canvas':
+        return kanvas
+        if(wasCanvasCreated) throw new Error("Kanvas can only create one canvas");
+        else {
+          wasCanvasCreated = true
+          return kanvas
+        }
+      case 'div':
+        return {
+          style: {},
+          addEventListener: (name) => console.log(`Add listener to ${name}`)
+        }
+      default:
+        throw new Error(`Kanvas cannot create element "${name}"`)
+    }
+  }
+};
+
+(<any>window).WebGLRenderingContext = WebGLRenderingContext;
+(<any>window).CanvasRenderingContext2D = CanvasRenderingContext2D;
+(<any>window).navigator = {};

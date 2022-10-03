@@ -159,6 +159,7 @@ There is some basic fetch support but only for local files. There is no HTTP cli
 fetch('myfile').then(function(response){
   response.arrayBuffer(function(mybuffer) { })
   response.text(function(mytext) { })
+  response.json(function(myObject) { })
   response.blob(function(myblob) {
     // blob only supports array buffer
     myblob.arrayBuffer().then(function(mybuffer) { })

@@ -745,7 +745,7 @@ BREAK:
       { NULL, NULL, 0 }
   };
 
-void kvs_init_vg(KVS_Context* ctx)
+void kvs_nanovg_init(KVS_Context* ctx)
 {
     startTime = SDL_GetTicks();
     duk_context *vm = ctx->vm;
@@ -796,39 +796,50 @@ void kvs_init_vg(KVS_Context* ctx)
     duk_pop(vm);
 }
 
+static void nanovg_beginframe(KVS_Context* ctx){
+    glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    
+    int ww,wh,rw,rh;
+    SDL_GL_GetDrawableSize(ctx->window, &rw, &rh);
+    SDL_GetWindowSize(ctx->window, &ww,&wh);
+    nvgBeginFrame(vg, ww, wh, ctx->config.retina ? rw/ww : 1);
+    //nvgGlobalCompositeBlendFunc(vg, NVG_SRC_ALPHA, NVG_ONE_MINUS_SRC_ALPHA);
+    //nvgGlobalCompositeBlendFuncSeparate(vg, NVG_SRC_ALPHA, NVG_ONE_MINUS_SRC_ALPHA, NVG_ONE, NVG_ZERO);
+    //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+static void nanovg_endframe(KVS_Context* ctx){
+    nvgEndFrame(vg);
+}
+
 void kvs_on_render(KVS_Context* ctx)
 {
     duk_context *vm = ctx->vm;
 
-    // glClearColor(0.3f,0,0,1);
-
-
-    // SDL_GL_GetDrawableSize()
-
     duk_require_stack(vm, 2);
-    if(kvs_push_callback(vm, "onrender")){
-        glEnable(GL_BLEND);
-        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_CULL_FACE);
-        glDisable(GL_DEPTH_TEST);
-        
+    if(kvs_push_callback(vm, "onrender")){  
+
+        int rw,rh;
+        SDL_GL_GetDrawableSize(ctx->window, &rw, &rh);
+        glViewport(0,0,rw,rh);
+
+        if(ctx->mode == KVS_MODE_2D) nanovg_beginframe(ctx);
+
         double time = ((double)SDL_GetTicks() - startTime);
         duk_push_number(vm, time);
-        int ww,wh,rw,rh;
-        SDL_GL_GetDrawableSize(ctx->window, &rw, &rh);
-        SDL_GetWindowSize(ctx->window, &ww,&wh);
-        glViewport(0,0,rw,rh);
-        nvgBeginFrame(vg, ww, wh, ctx->config.retina ? rw/ww : 1);
-        //nvgGlobalCompositeBlendFunc(vg, NVG_SRC_ALPHA, NVG_ONE_MINUS_SRC_ALPHA);
-        //nvgGlobalCompositeBlendFuncSeparate(vg, NVG_SRC_ALPHA, NVG_ONE_MINUS_SRC_ALPHA, NVG_ONE, NVG_ZERO);
-        //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
-        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+        
         if (duk_pcall(vm, 1) != 0)
         {
             kvs_print_error(ctx, KVS_RUNTIME);
         }
+        
+        if(ctx->mode == KVS_MODE_2D) nanovg_endframe(ctx);
+        
         kvs_run_task_queue(ctx);
-        nvgEndFrame(vg);
         
         SDL_Window* win = SDL_GL_GetCurrentWindow();
         SDL_GL_SwapWindow(win);

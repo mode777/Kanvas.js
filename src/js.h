@@ -11,6 +11,9 @@
 #define KVS_NUM_PROP(K,V) duk_push_number(vm,V);duk_put_prop_string(vm,-2,K)
 #define KVS_BOOL_PROP(K,V) duk_push_boolean(vm,V);duk_put_prop_string(vm,-2,K)
 #define KVS_CALLBACK() if (duk_pcall(vm, 1) != 0){ kvs_print_error(ctx, KVS_RUNTIME); }
+#define KVS_MODE_NONE 0
+#define KVS_MODE_2D 1
+#define KVS_MODE_WEBGL 2
 
 typedef struct {
     int width;
@@ -26,6 +29,7 @@ typedef struct {
     duk_context* vm;
     KVS_Config config;
     Soloud* soloud;
+    unsigned int mode;
 } KVS_Context;
 
 typedef enum{
@@ -39,8 +43,11 @@ void kvs_dispose(KVS_Context* ctx);
 int kvs_run_file(KVS_Context* ctx, const char* path);
 int kvs_decode_json(KVS_Context* ctx, const char* path);
 
-void kvs_init_vg(KVS_Context* ctx);
+void kvs_nanovg_init(KVS_Context* ctx);
 void kvs_nanovg_dispose();
+
+void kvs_webgl_init(KVS_Context* ctx);
+
 void kvs_on_render(KVS_Context* ctx);
 
 void kvs_on_event(KVS_Context* ctx, SDL_Event* ev);
