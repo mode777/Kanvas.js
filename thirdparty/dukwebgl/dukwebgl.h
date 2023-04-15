@@ -2207,45 +2207,36 @@ DUK_LOCAL duk_ret_t dukwebgl_custom_impl_texImage2D(duk_context *ctx) {
     GLenum type = 0;
     void *pixels = NULL;
 
-    /* FIXME: partial implementation. figure out HTMLImageElement, HTMLCanvasElement, HTMLVideoElement, ImageBitmap */
-    if (argc == 6) {
-        format = (GLenum)duk_get_uint(ctx, 3);
-        type = (GLenum)duk_get_uint(ctx, 4);
-
-        if (duk_is_object(ctx, 6)) {
-            /* ref. https://developer.mozilla.org/en-US/docs/Web/API/ImageData */
-            if (duk_has_prop_string(ctx, 6, "width")) {
-                duk_get_prop_string(ctx, 6, "width");
-                width = (GLsizei)duk_get_int(ctx, -1);
-                duk_pop(ctx);
-            }
-            if (duk_has_prop_string(ctx, 6, "height")) {
-                duk_get_prop_string(ctx, 6, "height");
-                height = (GLsizei)duk_get_int(ctx, -1);
-                duk_pop(ctx);
-            }
-            if (duk_has_prop_string(ctx, 6, "data")) {
-                duk_get_prop_string(ctx, 6, "data");
-                if (duk_is_buffer_data(ctx, -1)) {
-                    pixels = duk_get_buffer_data(ctx, -1, NULL);
-                    duk_pop(ctx);
-                }
-            }
+    if(argc >= 8){ // 8 or 9
+        width = duk_get_int(ctx, 3);
+        height = duk_get_int(ctx, 4);
+        border = duk_get_int(ctx, 5);
+        format = duk_get_uint(ctx, 6);
+        type = duk_get_uint(ctx, 7);
+        if(argc == 9){
+            // pixels must be typed array or dataview
+            pixels = duk_require_buffer_data(ctx, 8, NULL);
         }
+    } else { // 5 or 6
+        format = duk_get_uint(ctx, 3);
+        type = duk_get_uint(ctx, 4);
+        if(argc == 6){
+            duk_require_stack(ctx, 2);
+            // pixels must be ImageBitmap or Image
+            duk_bool_t exists = duk_get_prop_string(ctx, 5, "pixelData");
+            duk_require_object(ctx, 6);
+            
+            duk_get_prop_string(ctx, 6, "data");
+            pixels = duk_require_buffer_data(ctx, 7, NULL);
+            duk_pop(ctx);
 
-        pixels = dukwebgl_get_pixels(ctx, 8);
-    } else {
-        width = (GLsizei)duk_get_int(ctx, 3);
-        height = (GLsizei)duk_get_int(ctx, 4);
-        border = (GLint)duk_get_int(ctx, 5);
-        format = (GLenum)duk_get_uint(ctx, 6);
-        type = (GLenum)duk_get_uint(ctx, 7);
+            duk_get_prop_string(ctx, 6, "width");
+            width = duk_require_int(ctx, 7);
+            duk_pop(ctx);
 
-        pixels = dukwebgl_get_pixels(ctx, 8);
-
-        if (argc > 8) {
-            GLuint offset = (GLuint)duk_get_uint(ctx, 9);
-            pixels = (char*)pixels + offset;
+            duk_get_prop_string(ctx, 6, "width");
+            height = duk_require_int(ctx, 7);
+            duk_pop(ctx);
         }
     }
 
@@ -2381,8 +2372,7 @@ DUK_LOCAL duk_ret_t dukwebgl_custom_impl_getActiveUniform(duk_context *ctx) {
     break; }
 #define DEFINE_GET_PARAMETER_UNDEFINED { \
     duk_push_undefined(ctx); \
-    break; }
-
+    break; } 
 
 DUK_LOCAL duk_ret_t dukwebgl_custom_impl_getParameter(duk_context *ctx) {
     GLenum pname = (GLenum)duk_get_uint(ctx, 0);
@@ -2441,7 +2431,15 @@ DUK_LOCAL duk_ret_t dukwebgl_custom_impl_getParameter(duk_context *ctx) {
         case GL_COLOR_WRITEMASK: DEFINE_GET_PARAMETER_UNDEFINED
 #endif
 #ifdef GL_COMPRESSED_TEXTURE_FORMATS
-        case GL_COMPRESSED_TEXTURE_FORMATS: DEFINE_GET_PARAMETER_UNDEFINED
+        case GL_COMPRESSED_TEXTURE_FORMATS: {
+        GLint numFormats = 0; 
+        glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &numFormats); 
+        GLint formats[numFormats]; 
+        glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, formats); 
+        GLint* buffer = duk_push_fixed_buffer(ctx,sizeof(GLint)*numFormats);
+        memcpy((void*)buffer,(void*)formats,sizeof(GLint)*numFormats);
+        duk_push_buffer_object(ctx, -1, 0, sizeof(GLint)*numFormats, DUK_BUFOBJ_UINT32ARRAY);
+        break; }
 #endif
 #ifdef GL_CULL_FACE
         case GL_CULL_FACE: DEFINE_GET_PARAMETER_GLBOOLEAN

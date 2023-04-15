@@ -94,7 +94,8 @@ let currentTime = 0
 interface Timeout {
   fn: () => void
   time: number
-  id: number
+  id: number,
+  cancelled: boolean
 }
 
 const timeouts: Timeout[] = [];
@@ -103,9 +104,14 @@ const animationFrames = [];
 
 function setTimeout(fn,time) {
   console.log(fn,time)
-  const to = {fn,time: time+currentTime,id:toid++}
+  const to = {fn,time: time+currentTime,id:toid++, cancelled: false}
   timeouts.push(to)
   return toid
+}
+
+function clearTimeout(id){
+  const to = timeouts.find(x => x.id === id)
+  if(to) to.cancelled = true
 }
 
 function requestAnimationFrame(fn) {
@@ -124,7 +130,7 @@ window["onrender"] = function (time) {
     const to = timeouts[i]
     if(to.time >= time){
       timeouts.splice(i,1);
-      to.fn()
+      if(!to.cancelled) to.fn()
     }    
   }
 };
@@ -132,6 +138,7 @@ window["onrender"] = function (time) {
 (<any>window).kanvas = new Kanvas();
 (<any>window).requestAnimationFrame = requestAnimationFrame;
 (<any>window).setTimeout = setTimeout;
+(<any>window).clearTimeout = clearTimeout;
 
 (<any>window).dispatchEvent = (ev) => {
   window.kanvas.dispatchEvent(ev)
@@ -198,18 +205,72 @@ class Response {
 }
 
 class ImageBitmap {
-  private readonly size: any
-  constructor(public readonly img: any){
-    this.size = vg.imageSize(img)
+  _handle = undefined;
+  constructor(public readonly pixelData: any){}
+  get vgHandle() {
+    if(this._handle === undefined){
+      this._handle = vg.createImage(this.pixelData);
+    }
+    return this._handle;
   }
-  get width() { return this.size.width }
-  get height() { return this.size.height }
+  get width(){return this.pixelData.width}
+  get height(){return this.pixelData.height}
+  get [Symbol.toStringTag]() {
+    return 'ImageBitmap';
+  }
 }
+Duktape.fin(ImageBitmap.prototype, function(x: ImageBitmap){
+  if(x._handle !== undefined){
+    vg.deleteImage(x._handle)
+  }
+})
+
+class Image {
+  _handle = undefined;
+  constructor(){
+    if(arguments.length > 0) throw new Error('Kanvas does not support constructor arguments to image')
+  }
+  onload: (ev: Event) => void;
+  onerror: (e: Error) => void;
+  private _src: string; 
+  public pixelData: any;
+  public get src(): string {
+    return this._src;
+  }
+  public set src(value: string) {
+    this._src = value;
+    try {
+      this.pixelData = pixelDataFromFile(value);
+      this.onload?.call(this,{})
+    } catch(e){
+      this.onerror?.call(this,e)
+      throw e
+    }
+  }
+  get width(){return this.pixelData?.width ?? 0 }
+  get height(){return this.pixelData?.height ?? 0 }
+  get vgHandle() {
+    if(this._handle === undefined){
+      this._handle = vg.createImage(this.pixelData);
+    }
+    return this._handle;
+  }
+  get [Symbol.toStringTag]() {
+    return 'HTMLImageElement';
+  }
+}
+Duktape.fin(Image.prototype, function(x: Image){
+  if(x._handle !== undefined){
+    vg.deleteImage(x._handle)
+  }
+});
+
+(<any>window).Image = Image;
 
 async function createImageBitmap(blob: Blob){
   const arr = await blob.arrayBuffer();
-  const img = vg.createImage(arr,0);
-  return new ImageBitmap(img);
+  const pd = pixelDataFromBuffer(arr);
+  return new ImageBitmap(pd);
 }
 (<any>window).createImageBitmap = createImageBitmap;
 
@@ -385,6 +446,9 @@ class Audio {
     if(!this._source.isPlaying()) this._source.play()
     //console.log(this._playHandle)
   }
+  get [Symbol.toStringTag]() {
+    return 'HTMLAudioElement';
+  }
 }
 
 (<any>window).Audio = Audio;
@@ -404,6 +468,8 @@ let wasCanvasCreated = false;
           wasCanvasCreated = true
           return kanvas
         }
+      case 'image':
+        return new Image();
       case 'div':
         return {
           style: {},

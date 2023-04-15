@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack",
     "start": "serve dist",
-    "watch": "webpack --watch"
+    "watch": "webpack --watch --mode development"
   },
   "author": "Alexander Klingenbeck",
   "license": "MIT",

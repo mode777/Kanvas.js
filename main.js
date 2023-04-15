@@ -79,8 +79,5 @@ function loop(time){
 
 requestAnimationFrame(loop);
 
-var wav = new Audio()
-wav.src = 'assets/audio/bgm/mystical_theme.mp3'
-wav.preload = true
-wav.play()
-
+var pd = load_pixel_data('assets/png/bg_alley.png')
+console.log(pd.width,pd.height,pd.components)

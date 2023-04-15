@@ -432,44 +432,36 @@ static duk_ret_t js_vg_clear(duk_context *ctx){
 
 static duk_ret_t js_vg_deleteImage(duk_context *ctx)
 {    
-    duk_require_object(ctx, 0);
-    duk_get_prop_string(ctx, 0, "_ptr");
-    unsigned int id = (unsigned int)(size_t)duk_get_pointer_default(ctx, -1, NULL);
+    int id = duk_require_int(ctx, 0);
     nvgDeleteImage(vg, id);
-    
     return 0;
 }
 
 
 static duk_ret_t js_vg_createImage(duk_context *ctx)
 {
-    int id;
-    if(duk_is_string(ctx,0)){
-        const char *filename = duk_safe_to_string(ctx, 0);
-        duk_uint_t flag = duk_require_uint(ctx, 1);
+    duk_require_object(ctx, 0);
+    
+    duk_get_prop_string(ctx, -1, "width");
+    int w = duk_get_int(ctx, -1);
+    duk_pop(ctx);
 
-        id = nvgCreateImage(vg, filename, flag);
-    } else {
-        size_t len;
-        unsigned char* mem = duk_require_buffer_data(ctx, 0, &len);
-        
-        duk_uint_t flag = duk_require_uint(ctx, 1);
+    duk_get_prop_string(ctx, -1, "height");
+    int h = duk_get_int(ctx, -1);
+    duk_pop(ctx);
+    
+    size_t size;
+    duk_get_prop_string(ctx, -1, "data");
+    const unsigned char* data = duk_get_buffer_data(ctx, -1, &size);
+    duk_pop(ctx);
 
-        id = nvgCreateImageMem(vg, flag, mem, len);
-    }
+    int id = nvgCreateImageRGBA(vg, w,h,0,data);
+    
     if(id == 0){
-        duk_error(ctx, DUK_ERR_TYPE_ERROR, "Invalid imagedata or path");
-        return 1;
+        return duk_error(ctx, DUK_ERR_TYPE_ERROR, "Invalid imagedata");
     }
 
-    duk_push_object(ctx);
-    duk_push_pointer(ctx, (void*)(size_t)id);
-    duk_put_prop_string(ctx, -2, "_ptr");
-
-    // Store the function destructor
-    duk_push_c_function(ctx, js_vg_deleteImage, 1);
-    duk_set_finalizer(ctx, -2);
-
+    duk_push_int(ctx, id);
     return 1;
 }
 
@@ -499,11 +491,8 @@ static duk_ret_t js_vg_imagePattern(duk_context *ctx)
     float ex = duk_require_number(ctx, 2);
     float ey = duk_require_number(ctx, 3);
     float angle = duk_require_number(ctx, 4);
+    int id = duk_require_int(ctx, 5);
     float alpha = duk_require_number(ctx, 6);
-    duk_require_object(ctx, 5);
-    duk_get_prop_string(ctx, 5, "_ptr");
-    unsigned int id = (unsigned int)(size_t)duk_get_pointer_default(ctx, -1, NULL);
-
     NVGpaint paint = nvgImagePattern(vg, ox, oy, ex, ey, angle, id, alpha);
     nvgFillPaint(vg, paint);
 
@@ -732,7 +721,7 @@ BREAK:
       { "textAlign", js_vg_textAlign, 1 },
       { "textBounds", js_vg_textBounds, 3 },
       { "textMetrics", js_vg_textMetrics, 1 },
-      { "createImage", js_vg_createImage, 2 },
+      { "createImage", js_vg_createImage, 1 },
       { "imageSize", js_vg_imageSize, 1 },
       { "deleteImage", js_vg_deleteImage, 1 },
       { "imagePattern", js_vg_imagePattern, 7 },

@@ -23,7 +23,7 @@ export class CanvasRenderingContext2D {
     // todo: implement other overloads
     vg.beginPath();
     vg.rect(arguments[1],arguments[2],arguments[3] ?? img.width,arguments[4] ?? img.height);
-    vg.imagePattern(arguments[1],arguments[2],arguments[3] ?? img.width,arguments[4] ?? img.height, 0, (<any>img).img, 1);
+    vg.imagePattern(arguments[1],arguments[2],arguments[3] ?? img.width,arguments[4] ?? img.height, 0, (<any>img).vgHandle, 1);
     vg.globalAlpha(this.globalAlpha);
     vg.fill();
   }

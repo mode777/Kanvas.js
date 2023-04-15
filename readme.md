@@ -139,6 +139,8 @@ function loop(time){
 requestAnimationFrame(loop)
 ```
 
+> **An important note about rendering**: In the browser you can render to the canvas anytime you want and buffer swapping happens implicit. Kanvas does not mimic this behaviour (yet) and uses a traditional render loop. Therefore **all drawing must take place in the animation frame callback** or you will get unexpected results
+
 **Local Storage**
 
 There is basic support for local storage APIs but not session storage (as there is no concept of a session). Data is stored in the CWD (subject to change) as `{js_filename}.storage` file.

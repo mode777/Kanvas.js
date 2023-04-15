@@ -1,6 +1,6 @@
 {
-    "width": 100,
-    "height": 100,
+    "width": 640,
+    "height": 480,
     "retina": false,
     "title": "Kanvas!", 
     "resizable": true,

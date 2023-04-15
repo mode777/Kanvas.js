@@ -5,6 +5,8 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 
+#include "stb_image.h"
+
 #include <SDL.h>
 #include <duktape.h>
 
@@ -209,6 +211,48 @@ static duk_ret_t kanvas_set_mode(duk_context *ctx) {
     return 0;
 }
 
+static void pushPixelData(duk_context* ctx, int w, int h, int comp, unsigned char* data, size_t size){
+    duk_push_object(ctx);
+    duk_push_int(ctx, w);
+    duk_put_prop_string(ctx, -2, "width");
+    duk_push_int(ctx, h);
+    duk_put_prop_string(ctx, -2, "height");
+    duk_push_int(ctx, comp);
+    duk_put_prop_string(ctx, -2, "components");
+
+    unsigned char* buffer = duk_push_fixed_buffer(ctx,size);
+    memcpy((void*)buffer, (void*)data, size);
+    stbi_image_free(data);
+    duk_push_buffer_object(ctx, -1, 0, size, DUK_BUFOBJ_ARRAYBUFFER);
+    duk_put_prop_string(ctx,-3, "data");
+    duk_pop(ctx);
+}
+
+static duk_ret_t pixelData_fromBuffer(duk_context* ctx){
+    size_t buffer_size;
+    stbi_uc* buffer = duk_require_buffer_data(ctx, 0, &buffer_size);
+    int w,h,c;
+    stbi_uc* data = stbi_load_from_memory(buffer, buffer_size, &w, &h, &c, 4);
+    size_t size = w*h*c;
+    if(data == NULL){
+        return duk_error(ctx, DUK_ERR_URI_ERROR, stbi_failure_reason());
+    }
+    pushPixelData(ctx, w,h,c,data,size);
+    return 1;
+}
+
+static duk_ret_t pixelData_fromFile(duk_context* ctx){
+    const char* filename = duk_require_string(ctx, 0);
+    int w,h,c;
+    stbi_uc* data = stbi_load(filename, &w, &h, &c, 4);
+    size_t size = w*h*c;
+    if(data == NULL){
+        return duk_error(ctx, DUK_ERR_URI_ERROR, stbi_failure_reason());
+    }
+    pushPixelData(ctx,w,h,c,data,size);
+    return 1;
+}
+
 void kvs_init(KVS_Context* ctx, const char* configFile) {
     kvs = ctx;
     duk_context* vm = duk_create_heap(NULL, NULL, NULL, NULL, my_fatal);
@@ -235,11 +279,19 @@ void kvs_init(KVS_Context* ctx, const char* configFile) {
     duk_push_c_function(vm, kanvas_set_mode, 1);
     duk_put_prop_string(vm, -2, "kanvas_set_mode");
 
+    duk_push_c_function(vm, pixelData_fromFile, 1);
+    duk_put_prop_string(vm, -2, "pixelDataFromFile");
+
+    duk_push_c_function(vm, pixelData_fromBuffer, 1);
+    duk_put_prop_string(vm, -2, "pixelDataFromBuffer");
+
     int objIndex = duk_push_object(vm);
     duk_push_c_function(vm, js_print, DUK_VARARGS);
     duk_put_prop_string(vm, objIndex, "log");
     duk_push_c_function(vm, js_print, DUK_VARARGS);
     duk_put_prop_string(vm, objIndex, "warn");
+    duk_push_c_function(vm, js_print, DUK_VARARGS);
+    duk_put_prop_string(vm, objIndex, "error");
     duk_put_prop_string(vm, objIndex-1, "console");
 
     // TODO: Use kanvas_config instead
